@@ -125,14 +125,15 @@ int main() {
 	// ------------ //
 	// Device usage //
 	// ------------ //
+	while (found_node){
+		std::cout << "Writing to a dictionary entry (CANopen speech: \"download\")..." << std::endl;
+		core.sdo.download(node_id, index, subindex, data.size(), data);
 
-	std::cout << "Writing to a dictionary entry (CANopen speech: \"download\")..." << std::endl;
-	core.sdo.download(node_id, index, subindex, data.size(), data);
-
-	std::cout << "Reading the device type (\"upload\" 0x1000)... Little-endian!" << std::endl;
-	std::vector<uint8_t> device_type = core.sdo.upload(node_id,0x1000,0x0);
-	for (uint8_t device_type_byte : device_type) {
-		std::cout << "  byte 0x" << std::hex << (unsigned) device_type_byte << std::endl;
+		std::cout << "Reading the device type (\"upload\" 0x1000)... Little-endian!" << std::endl;
+		std::vector<uint8_t> device_type = core.sdo.upload(node_id,0x1000,0x0);
+		for (uint8_t device_type_byte : device_type) {
+			std::cout << "  byte 0x" << std::hex << (unsigned) device_type_byte << std::endl;
+		}
 	}
 
 	std::cout << "Reading the device name (\"upload\" 0x1008 - usually using segmented transfer)..." << std::endl;
