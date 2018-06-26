@@ -42,11 +42,11 @@ int main() {
 	// ----------- //
 
 	// The node ID of the slave we want to communicate with.
-	const uint8_t node_id = 2;
+	const uint8_t node_id = 4;
 
 	// Set the name of your CAN bus. "slcan0" is a common bus name
 	// for the first SocketCAN device on a Linux system.
-	const std::string busname = "slcan0";
+	const std::string busname = "can0";
 
 	// Set the baudrate of your CAN bus. Most drivers support the values
 	// "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".
@@ -101,7 +101,7 @@ int main() {
 
 	std::cout << "Asking all devices to reset. You don't need to do that, but it makes"
 		<< " sure all slaves are in a reproducible state." << std::endl;
-	core.nmt.reset_all_nodes();
+	//core.nmt.reset_all_nodes();
 
 	// As an alternative you can request the slaves to announce
 	// themselves:
