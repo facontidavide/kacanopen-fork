@@ -55,7 +55,7 @@ int main() {
 	// Set the object dictionary index to write to (download).
 	// Here: CiA-401 (I/O device) digital output.
 	const uint16_t index = 0x2008;
-	const uint16_t index1 = 0x2000;
+	const uint16_t index_ch1_speed = 0x2000;
 
 
 	// Alternative: CiA-402 (motor) control word:
@@ -64,14 +64,15 @@ int main() {
 	// Set the object dictionary sub-index to write to (download).
 	// Here: CiA-401 (I/O device) digital output - second byte.
 	const uint8_t subindex = 0x00;
-	const uint8_t subindex1 = 0x01;
+	const uint8_t subindex_ch1_speed = 0x01;
 
 	// Alternative: CiA-402 (motor) control word:
 	//const uint8_t subindex = 0x00;
 
 	// Set the data to write (download).
 	const std::vector<uint8_t> data { 0x2 };
-	const std::vector<uint8_t> data1 {0x8,0x1,0x0,0x0};
+	const std::vector<uint8_t> ch1_speed {0x8,0x1,0x0,0x0};
+	const std::vector<uint8_t> ch2_speed {0x8,0x1,0x0,0x0};
 	//const std::vector<uint8_t> data { 100};
 
 	// Alternative: CiA-402 (motor) control word has two bytes. Command: shutdown (little-endian!)
@@ -134,9 +135,9 @@ int main() {
 		std::cout << "Writing to a dictionary entry (CANopen speech: \"download\")..." << std::endl;
 		//core.sdo.download(node_id, index, subindex, data.size(), data);
 		//core.sdo.download(node_id, index, subindex, data.size(), data);
-		std::cout << "data size: " << data1.size() << std::endl;
+		//std::cout << "data size: " << data.size() << std::endl;
 		core.sdo.download(node_id, index, subindex, data.size(), data);
-		core.sdo.download(node_id, index1, subindex1, data1.size(), data1);
+		core.sdo.download(node_id, index_ch1_speed, subindex_ch1_speed, ch1_speed.size(), ch1_speed);
 
 		//core.sdo.download(node_id, index1, subindex1, uint32_t size, const std::vector<uint8_t>& bytes);
 
