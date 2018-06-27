@@ -108,6 +108,8 @@ int main() {
 		DUMP_HEX(device.get_entry("Write output 8-bit/Digital Outputs 1-8",kaco::ReadAccessMethod::cache));
 		DUMP_HEX(device.get_entry("Read input 8-bit/Digital Inputs 1-8",kaco::ReadAccessMethod::cache));
 		DUMP_HEX(device.get_entry("Read input 8-bit/Digital Inputs 9-16",kaco::ReadAccessMethod::cache));
+		int test=500;
+		std::cout<<"Test="<<test<<std::endl;
 
 	}
 
