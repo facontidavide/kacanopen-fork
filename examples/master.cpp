@@ -44,7 +44,7 @@ int main() {
 	// ----------- //
 
 	// The node ID of the slave we want to communicate with.
-	const uint8_t node_id = 2;
+	const uint8_t node_id = 4;
 
 	// Set the name of your CAN bus. "slcan0" is a common bus name
 	// for the first SocketCAN device on a Linux system.
@@ -104,13 +104,15 @@ int main() {
 	std::cout << "Loaded the following EDS file from the library: " << loaded_eds_file << std::endl;
 
 	std::cout << "Alternatively, you could load your own EDS file via device.load_dictionary_from_eds(path)." << std::endl;
-	// device.load_dictionary_from_eds("...");
+	device.load_dictionary_from_eds("/home/clio/clio_workspace/src/kacanopen/examples/roboteq.eds");
 
 	std::cout << "The following should work for all CANopen-compliant devices." << std::endl;
 
 	std::cout << "CiA-profile = " << device.get_device_profile_number() << std::endl;
 
 	std::cout << "Vendor-ID = " << device.get_entry("Identity object/Vendor-ID") << std::endl;
+	
+	device.print_dictionary();
 
 	std::cout << "The following works for most CANopen-compliant devices (however, the entries are not mandatory)." << std::endl;
 	try {
@@ -130,34 +132,35 @@ int main() {
 		
 		std::cout << "CiA-402: Set position mode using a built-in constant (see master/src/profiles.cpp)..." << std::endl;
 		device.set_entry("modes_of_operation", device.get_constant("profile_position_mode"));
-
-		std::cout << "CiA-402: Enable operation using a built-in operation (see master/src/profiles.cpp)..." << std::endl;
+		//std::cout << "CiA-402: Set speed mode using a built-in constant (see master/src/profiles.cpp)..." << std::endl;
+		//device.set_entry("modes_of_operation", device.get_constant("profile_speed_mode"));
+		//std::cout << "CiA-402: Enable operation using a built-in operation (see master/src/profiles.cpp)..." << std::endl;
 		device.execute("enable_operation");
 
 		std::cout << "CiA-402: Set target position..." << std::endl;
+		//Type of target position is INT32, so cast accordingly.
+		device.execute("set_target_position", (int32_t) 200);
+
+		//std::cout << "Waiting a second..." << std::endl;
+		//std::this_thread::sleep_for(std::chrono::seconds(1));
+
+		////std::cout << "CiA-402: Set target position..." << std::endl;
 		// Type of target position is INT32, so cast accordingly.
-		device.execute("set_target_position", (int32_t) 0);
+		//device.execute("set_target_position", (int32_t) 5000);
 
-		std::cout << "Waiting a second..." << std::endl;
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		//std::cout << "Waiting a second..." << std::endl;
+		//std::this_thread::sleep_for(std::chrono::seconds(1));
 
-		std::cout << "CiA-402: Set target position..." << std::endl;
+		//std::cout << "CiA-402: Set target position..." << std::endl;
 		// Type of target position is INT32, so cast accordingly.
-		device.execute("set_target_position", (int32_t) 5000);
-
-		std::cout << "Waiting a second..." << std::endl;
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-
-		std::cout << "CiA-402: Set target position..." << std::endl;
-		// Type of target position is INT32, so cast accordingly.
-		device.execute("set_target_position", (int32_t) 10000);
+		//device.execute("set_target_position", (int32_t) 10000);
 
 	} catch (const kaco::canopen_error& error) {
 		std::cout << "CiA-402 failed: " << error.what() << std::endl;
 	}
 
-	std::cout << "The following should fail on devices which are not CiA-401 I/O devices." << std::endl;
-	try {
+	//std::cout << "The following should fail on devices which are not CiA-401 I/O devices." << std::endl;
+	/*try {
 
 		std::cout << "CiA-401: Set digital output (first byte)..." << std::endl;
 		// Type of this entry is UINT8, so cast accordingly.
@@ -169,6 +172,6 @@ int main() {
 
 	} catch (const kaco::canopen_error& error) {
 		std::cout << "CiA-401 failed: " << error.what() << std::endl;
-	}
+	}*/
 
 }

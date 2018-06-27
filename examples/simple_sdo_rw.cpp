@@ -46,7 +46,7 @@ int main() {
 
 	// Set the name of your CAN bus. "slcan0" is a common bus name
 	// for the first SocketCAN device on a Linux system.
-	const std::string busname = "can0";
+	const std::string busname = "slcan0";
 
 	// Set the baudrate of your CAN bus. Most drivers support the values
 	// "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".
@@ -54,20 +54,25 @@ int main() {
 
 	// Set the object dictionary index to write to (download).
 	// Here: CiA-401 (I/O device) digital output.
-	const uint16_t index = 0x6200;
+	const uint16_t index = 0x2008;
+	const uint16_t index1 = 0x2000;
+
 
 	// Alternative: CiA-402 (motor) control word:
 	//const uint16_t index = 0x6040;
 
 	// Set the object dictionary sub-index to write to (download).
 	// Here: CiA-401 (I/O device) digital output - second byte.
-	const uint8_t subindex = 0x01;
+	const uint8_t subindex = 0x00;
+	const uint8_t subindex1 = 0x01;
 
 	// Alternative: CiA-402 (motor) control word:
 	//const uint8_t subindex = 0x00;
 
 	// Set the data to write (download).
-	const std::vector<uint8_t> data { 0x7F };
+	const std::vector<uint8_t> data { 0x2 };
+	const std::vector<uint8_t> data1 {0x8,0x1,0x0,0x0};
+	//const std::vector<uint8_t> data { 100};
 
 	// Alternative: CiA-402 (motor) control word has two bytes. Command: shutdown (little-endian!)
 	//const std::vector<uint8_t> data { 0x06, 0x00 };
@@ -127,20 +132,31 @@ int main() {
 	// ------------ //
 	while (found_node){
 		std::cout << "Writing to a dictionary entry (CANopen speech: \"download\")..." << std::endl;
+		//core.sdo.download(node_id, index, subindex, data.size(), data);
+		//core.sdo.download(node_id, index, subindex, data.size(), data);
+		std::cout << "data size: " << data1.size() << std::endl;
 		core.sdo.download(node_id, index, subindex, data.size(), data);
+		core.sdo.download(node_id, index1, subindex1, data1.size(), data1);
 
-		std::cout << "Reading the device type (\"upload\" 0x1000)... Little-endian!" << std::endl;
-		std::vector<uint8_t> device_type = core.sdo.upload(node_id,0x1000,0x0);
-		for (uint8_t device_type_byte : device_type) {
-			std::cout << "  byte 0x" << std::hex << (unsigned) device_type_byte << std::endl;
-		}
-	}
+		//core.sdo.download(node_id, index1, subindex1, uint32_t size, const std::vector<uint8_t>& bytes);
+
+		//std::cout << "Reading the device type (\"upload\" 0x1000)... Little-endian!" << std::endl;
+		//std::vector<uint8_t> device_type = core.sdo.upload(node_id,0x1000,0x0);
+		//for (uint8_t device_type_byte : device_type) {
+		//	std::cout << "  byte 0x" << std::hex << (unsigned) device_type_byte << std::endl;
+		//}
+	
 
 	std::cout << "Reading the device name (\"upload\" 0x1008 - usually using segmented transfer)..." << std::endl;
 	std::vector<uint8_t> device_name = core.sdo.upload(node_id,0x1008,0x0);
 	std::string result(reinterpret_cast<char const*>(device_name.data()), device_name.size());
 	std::cout << "  " << result << std::endl;
-
+	std::cout << "Reading the motor speed (\"upload\"0x2103 - usually using segmented transfer)..." << std::endl;
+	std::vector<uint8_t> speed = core.sdo.upload(node_id,0x2103,0x01);
+	std::string result2(reinterpret_cast<char const*>(speed.data()), speed.size());
+	std::cout << "  " << result2 << std::endl;
+	
+	}
 	std::cout << "Finished." << std::endl;
 	return EXIT_SUCCESS;
 
