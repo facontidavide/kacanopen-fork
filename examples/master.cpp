@@ -103,8 +103,8 @@ int main() {
 	const std::string loaded_eds_file = device.load_dictionary_from_library();
 	std::cout << "Loaded the following EDS file from the library: " << loaded_eds_file << std::endl;
 
-	std::cout << "Alternatively, you could load your own EDS file via device.load_dictionary_from_eds(path)." << std::endl;
-	device.load_dictionary_from_eds("/home/clio/clio_workspace/src/kacanopen/examples/roboteq.eds");
+	//std::cout << "Alternatively, you could load your own EDS file via device.load_dictionary_from_eds(path)." << std::endl;
+	//device.load_dictionary_from_eds("put your absolute path here");
 
 	std::cout << "The following should work for all CANopen-compliant devices." << std::endl;
 

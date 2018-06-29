@@ -92,6 +92,8 @@ int main() {
 	const uint16_t index_ch2_speed = 0x2000;
 	const uint16_t index_ch1_speed_feedback = 0x2103;
 	const uint16_t index_ch2_speed_feedback = 0x2103;
+	const uint16_t index_ch1_Battery_Amps = 0x210C;
+	const uint16_t index_ch2_Battery_Amps = 0x210C;
 	// Set the object dictionary sub-index to write to (download).
 	// Here: CiA-401 (I/O device) digital output - second byte.
 	const uint8_t subindex_digtal_out_write = 0x00;
@@ -101,6 +103,8 @@ int main() {
 	const uint8_t subindex_ch2_speed = 0x02;
 	const uint8_t subindex_ch1_speed_feedback = 0x01;
 	const uint8_t subindex_ch2_speed_feedback = 0x02;
+	const uint8_t subindex_ch1_Battery_Amps = 0x01;
+	const uint8_t subindex_ch2_Battery_Amps = 0x02;
 	// Set the data to write (download).
 	const std::vector<uint8_t> digtal_out_write { 0x2 };
 	const std::vector<uint8_t> ch1_speed {0x34,0xF3,0xFF,0xFF}; // speed reference to roboteq : +3276 .This is the lowest valid reference.
@@ -187,7 +191,7 @@ int main() {
 		std::cout<<""<<std::endl;
 
 	}
-	std::cout << "Writing digital out to "<< std::endl;
+	std::cout << "Writing digital out to "<< std::hex << index_digtal_out_write <<std::endl;
 	core.sdo.download(node_id, index_digtal_out_write, subindex_digtal_out_write, digtal_out_write.size(), digtal_out_write);
 	std::cout << "Waiting for a second..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -200,13 +204,21 @@ int main() {
 		
 		std::cout << "Sending speed reference to Roboteq channel 1..." << std::endl;
 		core.sdo.download(node_id, index_ch1_speed, subindex_ch1_speed, ch1_speed.size(), ch1_speed);
-		//std::cout << "Sending speed reference to Roboteq channel 2..." << std::endl;
-		//core.sdo.download(node_id, index_ch2_speed, subindex_ch2_speed, ch2_speed.size(), ch2_speed);	
+		std::cout << "Sending speed reference to Roboteq channel 2..." << std::endl;
+		core.sdo.download(node_id, index_ch2_speed, subindex_ch2_speed, ch2_speed.size(), ch2_speed);	
 		std::cout << "Reading the sdo at "<< std::hex<< index_ch1_speed_feedback <<"...." << std::endl;
 		std::vector<uint8_t> ch1_speed_feedback = core.sdo.upload(node_id,index_ch1_speed_feedback,subindex_ch1_speed_feedback);
-		int readout= parse_sdo_read(ch1_speed_feedback);
-		std::cout <<"Channel 1 speed in hex= 0x" << std::hex << readout << std::endl;
-		std::cout <<"Channel 1 speed in decimal= " << std::dec << readout << std::endl;
+		std::vector<uint8_t> ch2_speed_feedback = core.sdo.upload(node_id,index_ch2_speed_feedback,subindex_ch2_speed_feedback);
+		std::vector<uint8_t> ch1_Battery_Amps = core.sdo.upload(node_id,index_ch1_Battery_Amps,subindex_ch1_Battery_Amps);
+		std::vector<uint8_t> ch2_Battery_Amps = core.sdo.upload(node_id,index_ch2_Battery_Amps,subindex_ch2_Battery_Amps);
+		int readout1= parse_sdo_read(ch1_speed_feedback);
+		int readout2= parse_sdo_read(ch2_speed_feedback);
+		int readout3= parse_sdo_read(ch1_Battery_Amps);
+		int readout4= parse_sdo_read(ch2_Battery_Amps);
+		std::cout <<"Channel 1 speed in hex= 0x" << std::hex << readout1 << std::endl;
+		std::cout <<"Channel 2 speed in decimal= " << std::dec << readout2 << std::endl;
+		std::cout <<"Channel 1 Battery Amps in decimal=" << std::dec << readout3 << std::endl;
+		std::cout <<"Channel 2 Battery Amps in decimal=" << std::dec << readout4 << std::endl;
 
 
 
