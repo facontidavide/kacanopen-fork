@@ -43,7 +43,8 @@ namespace kaco {
 Entry::Entry()
 	: type(Type::invalid),
 		m_value_changed_callbacks_mutex(new std::mutex),
-		m_read_write_mutex(new std::recursive_mutex)
+    m_read_write_mutex(new std::recursive_mutex),
+    disabled(false)
 	{ }
 
 // standard constructor

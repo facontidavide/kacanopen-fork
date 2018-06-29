@@ -464,10 +464,10 @@ void Device::print_dictionary() const {
 	using EntryRef = std::reference_wrapper<const kaco::Entry>;
 	std::vector<EntryRef> entries;
 
-	for (const auto& pair : m_dictionary) {
-		if (!pair.second.disabled) {
+  for (const auto& pair : m_dictionary) {
+    if (!pair.second.disabled) {
 			entries.push_back(std::ref(pair.second));
-		}
+    }
 	}
 
 	// sort by index and subindex

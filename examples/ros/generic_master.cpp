@@ -33,6 +33,7 @@
 #include "logger.h"
 #include "entry_publisher.h"
 #include "entry_subscriber.h"
+#include "master.h"
  
 #include <thread>
 #include <chrono>
@@ -64,7 +65,8 @@ int main(int argc, char* argv[]) {
 	// should be a 401 device
 	kaco::Device& device = master.get_device(0);
 	device.start();
-	device.load_dictionary_from_library();
+  device.load_dictionary_from_library();
+  //device.load_dictionary_from_eds("/home/mhs/bor/test/CANopenSocket/canopend/objDict/CANopenSocket.eds");
 	uint16_t profile = device.get_device_profile_number();
 
 	if (profile != 401) {
@@ -77,11 +79,11 @@ int main(int argc, char* argv[]) {
 	DUMP(device.get_entry("Manufacturer device name"));
 
 	// map PDOs (optional)
-	//device.add_receive_pdo_mapping(0x188, "Read input 8-bit/Digital Inputs 1-8", 0); // offset 0
+	device.add_receive_pdo_mapping(0x188, "Read input 8 bit", 0); // offset 0
 	//device.add_receive_pdo_mapping(0x188, "Read input 8-bit/Digital Inputs 9-16", 1); // offset 1
 
 	// set some output (optional)
-	//device.set_entry("Write output 8-bit/Digital Outputs 1-8", (uint8_t) 0xFF);
+	device.set_entry("Write output 8 bit", (uint8_t) 0xFF);
 
 	ros::init(argc, argv, "canopen_bridge");
 
