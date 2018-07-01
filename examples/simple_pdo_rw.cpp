@@ -32,7 +32,7 @@
 #include <thread>
 #include <chrono>
 #include <cstdint>
-
+#include "device.h"
 #include "master.h"
 #include "logger.h"
 
@@ -64,8 +64,8 @@ int main() {
 	}
 
 	size_t index;
-	bool found = true;
-	/*for (size_t i=0; i<master.num_devices(); ++i) {
+	bool found = false;
+	for (size_t i=0; i<master.num_devices(); ++i) {
 		kaco::Device& device = master.get_device(i);
 		device.start();
 		if (device.get_device_profile_number()==401) {
@@ -73,7 +73,7 @@ int main() {
 			found = true;
 			PRINT("Found CiA 401 device with node ID "<<device.get_node_id());
 		}
-	}*/
+	}
 
 	if (!found) {
 		ERROR("This example is intended for use with a CiA 401 device but I can't find one.");
@@ -90,11 +90,11 @@ int main() {
 
 	// TODO: first configure PDO on device side?
 
-	device.add_receive_pdo_mapping(0x180+node_id, "Read input 8-bit/Digital Inputs 1-8", 0); // offset 0,
-	device.add_receive_pdo_mapping(0x180+node_id, "Read input 8-bit/Digital Inputs 9-16", 1); // offset 1
+	device.add_receive_pdo_mapping(0x180+node_id, "Qry_ABSPEED", 1); // offset 0,
+	device.add_receive_pdo_mapping(0x180+node_id, "Qry_ABSPEED", 2); // offset 1
 	
 	// transmit PDO on change
-	device.add_transmit_pdo_mapping(0x200+node_id, {{"Write output 8-bit/Digital Outputs 1-8", 0}}); // offset 0
+	//device.add_transmit_pdo_mapping(0x200+node_id, {{"Write output 8-bit/Digital Outputs 1-8", 0}}); // offset 0
 
 	// transmit PDO every 500ms
 	//device.add_transmit_pdo_mapping(0x20A, {{"write_output", 0, 0, 0}}, kaco::TransmissionType::PERIODIC, std::chrono::milliseconds(500));
@@ -108,6 +108,8 @@ int main() {
 		DUMP_HEX(device.get_entry("Write output 8-bit/Digital Outputs 1-8",kaco::ReadAccessMethod::cache));
 		DUMP_HEX(device.get_entry("Read input 8-bit/Digital Inputs 1-8",kaco::ReadAccessMethod::cache));
 		DUMP_HEX(device.get_entry("Read input 8-bit/Digital Inputs 9-16",kaco::ReadAccessMethod::cache));
+		int test=500;
+		std::cout<<"Test="<<test<<std::endl;
 
 	}
 

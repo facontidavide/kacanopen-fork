@@ -37,34 +37,13 @@
 #include "device.h"
 #include "logger.h"
 #include "master.h"
-
+#include "parse_sdo.h"
+#include "parse_sdo.cpp"
 #include <signal.h>
 
 static volatile int keepRunning = 1;
 
 void intHandler(int dummy) { keepRunning = 0; }
-
-int32_t parse_sdo_read(std::vector<uint8_t> sdo_to_read) {
-  unsigned char sdo_read_byte[] = {0x00, 0x00, 0x00, 0x00};
-
-  for (unsigned int i = 0; i < sdo_to_read.size(); i++) {
-    sdo_read_byte[i] = sdo_to_read.at(i);
-    // std::cout<<"sdo_to_read["<<i<<"] 0x"<< std::hex << (unsigned)
-    // sdo_read_byte[i] << std::endl;
-  }
-  int16_t sdo_read_w0 = (sdo_read_byte[1] << 8) + sdo_read_byte[0];
-  int16_t sdo_read_w1 = (sdo_read_byte[3] << 8) + sdo_read_byte[2];
-  int32_t sdo_read_dw = (sdo_read_w1 << 16) + sdo_read_w0;
-  // std::cout<<"size of the sdo read="<<sdo_to_read.size()<<std::endl;
-  if (2 < sdo_to_read.size()) {
-    // std::cout<<"I am returing int32"<<std::endl;
-    return sdo_read_dw;
-  } else {
-    short int ret = sdo_read_dw;
-    // std::cout<<"I am returing short int"<<std::endl;
-    return ret;
-  }
-}
 
 int main() {
   // Signal handleing
