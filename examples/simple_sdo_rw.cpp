@@ -37,8 +37,8 @@
 #include "device.h"
 #include "logger.h"
 #include "master.h"
-#include "parse_sdo.h"
-#include "parse_sdo.cpp"
+#include "../utils/include/parse_sdo.h"
+#include "../utils/src/parse_sdo.cpp" 
 #include <signal.h>
 
 static volatile int keepRunning = 1;
@@ -79,9 +79,9 @@ int main() {
   const uint16_t index_ch2_speed_feedback = 0x2103;
   const uint16_t index_ch1_Battery_Amps = 0x210C;
   const uint16_t index_ch2_Battery_Amps = 0x210C;
-  const uint16_t index_Slave_TPD1_map = 0x1A00;
-  const uint16_t index_Slave_TPD2_map = 0x1A01;
-  const uint16_t index_Slave_TPD3_map = 0x1A02;
+  const uint16_t index_Slave_TPDO1_map = 0x1A00;
+  const uint16_t index_Slave_TPDO2_map = 0x1A01;
+  const uint16_t index_Slave_TPDO3_map = 0x1A02;
   // Set the object dictionary sub-index to write to (download).
   // Here: CiA-401 (I/O device) digital output - second byte.
   const uint8_t subindex_digtal_out_write = 0x00;
@@ -93,9 +93,9 @@ int main() {
   const uint8_t subindex_ch2_speed_feedback = 0x02;
   const uint8_t subindex_ch1_Battery_Amps = 0x01;
   const uint8_t subindex_ch2_Battery_Amps = 0x02;
-  const uint16_t subindex_Slave_TPD1_map = 0x01;
-  const uint16_t subindex_Slave_TPD2_map = 0x01;
-  const uint16_t subindex_Slave_TPD3_map = 0x01;
+  const uint16_t subindex_Slave_TPDO1_map = 0x01;
+  const uint16_t subindex_Slave_TPDO2_map = 0x01;
+  const uint16_t subindex_Slave_TPDO3_map = 0x01;
   // Set the data to write (download).
   const std::vector<uint8_t> digtal_out_write{0x2};
   const std::vector<uint8_t> subindex_Slave_TPD1_mapped_value{
