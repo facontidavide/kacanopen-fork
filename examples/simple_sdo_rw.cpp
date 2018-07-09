@@ -29,17 +29,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <signal.h>
 #include <chrono>
 #include <iostream>
 #include <memory>
 #include <vector>
+#include "../utils/include/parse_sdo.h"
+#include "../utils/src/parse_sdo.cpp"
 #include "core.h"
 #include "device.h"
 #include "logger.h"
 #include "master.h"
-#include "../utils/include/parse_sdo.h"
-#include "../utils/src/parse_sdo.cpp" 
-#include <signal.h>
 
 static volatile int keepRunning = 1;
 
@@ -73,6 +73,7 @@ int main() {
 
   // Alternative: CiA-402 (motor) control word:
   // const uint16_t index = 0x6040;
+  const uint16_t index_Qry_DIGIN = 0x210E;
   const uint16_t index_ch1_speed = 0x2000;
   const uint16_t index_ch2_speed = 0x2000;
   const uint16_t index_ch1_speed_feedback = 0x2103;
@@ -87,6 +88,7 @@ int main() {
   const uint8_t subindex_digtal_out_write = 0x00;
   // Alternative: CiA-402 (motor) control word:
   // const uint8_t subindex = 0x00;
+  const uint8_t subindex_Qry_DIGIN = 0x00;
   const uint8_t subindex_ch1_speed = 0x01;
   const uint8_t subindex_ch2_speed = 0x02;
   const uint8_t subindex_ch1_speed_feedback = 0x01;
@@ -142,11 +144,10 @@ int main() {
       if (!found_node) {
         found_node = true;
         device.reset(new kaco::Device(core, node_id));
+        device->load_dictionary_from_eds(
+            "/home/mhs/Desktop/EDS/roboteq_motor_controllers_v80beta.eds");
         device->start();
-
-        device->load_dictionary_from_library();
-        device->print_dictionary();
-
+        // device->load_dictionary_from_library();
         std::vector<uint8_t> read_device_type =
             core.sdo.upload(node_id, 0x1000, 0x0);
         std::vector<uint8_t> read_device_name =
@@ -201,32 +202,22 @@ int main() {
   });
 
   std::cout << "Giving the devices one second time to respond..." << std::endl;
+  std::this_thread::sleep_for(std::chrono::seconds(6));
+  std::cout << "Printing Device Object Dictionary" << std::endl;
+  device->print_dictionary();
   std::this_thread::sleep_for(std::chrono::seconds(2));
-
-  // std::cout << "Writing digital out to "<< std::hex << index_digtal_out_write
-  // <<std::endl;
-  // core.sdo.download(node_id, index_digtal_out_write,
-  // subindex_digtal_out_write, digtal_out_write.size(), digtal_out_write);
-  // std::cout << "Waiting for a second..." << std::endl;
-  // std::this_thread::sleep_for(std::chrono::seconds(1));
-  // std::cout << "Trying to read PDO1..." << std::endl;
-  // device->add_receive_pdo_mapping(0x180+node_id, "Qry_ABSPEED", 1); // offset
-  // 0,
-  // device->add_receive_pdo_mapping(0x280+node_id, "Qry_ABSPEED", 1); // offset
-  // 1
-  // core.sdo.download(node_id, index_Slave_TPD1_map, subindex_Slave_TPD1_map,
-  // subindex_Slave_TPD1_mapped_value.size(), subindex_Slave_TPD1_mapped_value);
   // ------------ //
   // Device usage //
   // ------------ //
+
   while (keepRunning) {
     if (found_node) {
-      std::cout << "Sending speed reference to Roboteq channel 1..."
-                << std::endl;
+      std::cout << "Sending speed reference to Roboteq channel 1..." << std::hex
+                << ch1_speed << std::endl;
       core.sdo.download(node_id, index_ch1_speed, subindex_ch1_speed,
                         ch1_speed.size(), ch1_speed);
-      std::cout << "Sending speed reference to Roboteq channel 2..."
-                << std::endl;
+      std::cout << "Sending speed reference to Roboteq channel 2..." << std::hex
+                << ch2_speed << std::endl;
       core.sdo.download(node_id, index_ch2_speed, subindex_ch2_speed,
                         ch2_speed.size(), ch2_speed);
       std::cout << "Reading the sdo at " << std::hex << index_ch1_speed_feedback
@@ -239,18 +230,23 @@ int main() {
           node_id, index_ch1_Battery_Amps, subindex_ch1_Battery_Amps);
       std::vector<uint8_t> ch2_Battery_Amps = core.sdo.upload(
           node_id, index_ch2_Battery_Amps, subindex_ch2_Battery_Amps);
+      std::vector<uint8_t> Qry_DIGIN =
+          core.sdo.upload(node_id, index_Qry_DIGIN, subindex_Qry_DIGIN);
       int readout1 = parse_sdo_read(ch1_speed_feedback);
       int readout2 = parse_sdo_read(ch2_speed_feedback);
       int readout3 = parse_sdo_read(ch1_Battery_Amps);
       int readout4 = parse_sdo_read(ch2_Battery_Amps);
+      int readout5 = parse_sdo_read(Qry_DIGIN);
       std::cout << "Channel 1 speed in decimal = " << std::dec << readout1
                 << std::endl;
-      std::cout << "Channel 2 speed in decimal = " << std::dec << readout2
+      std::cout << "Channel 2 speed in hex= " << std::hex << readout2
                 << std::endl;
       std::cout << "Channel 1 Battery Amps in decimal = " << std::dec
                 << readout3 << std::endl;
       std::cout << "Channel 2 Battery Amps in decimal = " << std::dec
                 << readout4 << std::endl;
+      std::cout << "Digital input status = " << std::hex << readout5
+                << std::endl;
     }
   }
   std::cout << "Finished." << std::endl;

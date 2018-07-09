@@ -40,7 +40,7 @@ int main() {
 
 	// Set the name of your CAN bus. "slcan0" is a common bus name
 	// for the first SocketCAN device on a Linux system.
-	const std::string busname = "can0";
+  const std::string busname = "slcan0";
 
 	// Set the baudrate of your CAN bus. Most drivers support the values
 	// "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".
@@ -84,14 +84,15 @@ int main() {
 	const auto node_id = device.get_node_id();
 	// device.start(); // already started
 
-	device.load_dictionary_from_library();
+  //device.load_dictionary_from_library();
+  device.load_dictionary_from_eds("/home/mhs/bor/test/src/kacanopen/examples/roboteq.eds");
 
 	DUMP(device.get_entry("Manufacturer device name"));
 
 	// TODO: first configure PDO on device side?
 
-	device.add_receive_pdo_mapping(0x180+node_id, "Qry_ABSPEED", 1); // offset 0,
-	device.add_receive_pdo_mapping(0x180+node_id, "Qry_ABSPEED", 2); // offset 1
+  device.add_receive_pdo_mapping(0x180+node_id, "qry_abspeed", 0); // offset 0,
+  //device.add_receive_pdo_mapping(0x180+node_id, "Qry_ABSPEED", 2); // offset 1
 	
 	// transmit PDO on change
 	//device.add_transmit_pdo_mapping(0x200+node_id, {{"Write output 8-bit/Digital Outputs 1-8", 0}}); // offset 0
@@ -101,13 +102,14 @@ int main() {
 
 	for (uint8_t i=0; i<10; ++i) {
 
-		PRINT("Set output to 0x"<<std::hex<<i<<" (via cache!) and wait 1 second");
-		device.set_entry("Write output 8-bit/Digital Outputs 1-8", i, kaco::WriteAccessMethod::cache);
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+    //PRINT("Set output to 0x"<<std::hex<<i<<" (via cache!) and wait 1 second");
+    //device.set_entry("Write output 8-bit/Digital Outputs 1-8", i, kaco::WriteAccessMethod::cache);
+    //std::this_thread::sleep_for(std::chrono::seconds(1));
 
-		DUMP_HEX(device.get_entry("Write output 8-bit/Digital Outputs 1-8",kaco::ReadAccessMethod::cache));
-		DUMP_HEX(device.get_entry("Read input 8-bit/Digital Inputs 1-8",kaco::ReadAccessMethod::cache));
-		DUMP_HEX(device.get_entry("Read input 8-bit/Digital Inputs 9-16",kaco::ReadAccessMethod::cache));
+    //DUMP_HEX(device.get_entry("Write output 8-bit/Digital Outputs 1-8",kaco::ReadAccessMethod::cache));
+    //DUMP_HEX(device.get_entry("Read input 8-bit/Digital Inputs 1-8",kaco::ReadAccessMethod::cache));
+  //	DUMP_HEX(device.get_entry("Read input 8-bit/Digital Inputs 9-16",kaco::ReadAccessMethod::cache));
+    DUMP_HEX(device.get_entry("qry_abspeed/channel_1",kaco::ReadAccessMethod::cache));
 		int test=500;
 		std::cout<<"Test="<<test<<std::endl;
 

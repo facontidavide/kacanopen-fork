@@ -36,21 +36,14 @@
 #include <vector>
 #include "../utils/include/parse_sdo.h"
 #include "../utils/src/parse_sdo.cpp"
-#include "canopen_error.h"
 #include "core.h"
 #include "device.h"
 #include "logger.h"
 #include "master.h"
-#include "receive_pdo_mapping.h"
 
 static volatile int keepRunning = 1;
 
 void intHandler(int dummy) { keepRunning = 0; }
-
-void qry_abspeed_channel_1_callback(const kaco::ReceivePDOMapping& mapping,
-                                    std::vector<uint8_t> data) {
-  std::cout << "hola" << std::endl;
-}
 
 int main() {
   // Signal handleing
@@ -90,6 +83,7 @@ int main() {
   // This will be set to true by the callback below.
   bool found_node = false;
   bool node_initialized = false;
+
   std::cout << "Registering a callback which is called when a device is "
                "detected via NMT..."
             << std::endl;
@@ -103,49 +97,20 @@ int main() {
             device.reset(new kaco::Device(core, node_id));
             device->load_dictionary_from_eds(
                 "/home/mhs/Desktop/EDS/roboteq_motor_controllers_v80beta.eds");
+
+            device->set_entry("Cmd_DOUT", static_cast<uint8_t>(0xF0),
+                              kaco::WriteAccessMethod::pdo);
             device->add_transmit_pdo_mapping(0x200 + node_id, {{"Cmd_DOUT", 0}},
-                                             kaco::TransmissionType::ON_CHANGE,
+                                             kaco::TransmissionType::PERIODIC,
                                              std::chrono::milliseconds(250));
-            //            device->add_receive_pdo_mapping(
-            //                0x180 + node_id, "qry_abspeed/channel_1", 1,
-            //                qry_abspeed_channel_1_callback);  // offset 1,
-            device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_abspeed/channel_1", 1);  // offset 1,
-            device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_abspeed/channel_2", 2);  // offset 2,
-            device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_batamps/channel_1", 4);  // offset 4,
-            device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_batamps/channel_2", 6);  // offset 6,
             node_initialized = true;
           }
         }
       });
-  uint8_t digtal_out_write = 0x0;
+
   while (keepRunning) {
     if (node_initialized) {
-
-      try {
-        DUMP_HEX(
-            device->get_entry("qry_abspeed/channel_1",
-                              kaco::ReadAccessMethod::pdo_request_and_wait));
-        DUMP_HEX(
-            device->get_entry("qry_abspeed/channel_2",
-                              kaco::ReadAccessMethod::pdo_request_and_wait));
-        DUMP_HEX(
-            device->get_entry("qry_batamps/channel_1",
-                              kaco::ReadAccessMethod::pdo_request_and_wait));
-        DUMP_HEX(
-            device->get_entry("qry_batamps/channel_2",
-                              kaco::ReadAccessMethod::pdo_request_and_wait));
-      } catch (kaco::canopen_error exception) {
-      }
-      digtal_out_write++;
-      device->set_entry("Cmd_DOUT", digtal_out_write,
-                        kaco::WriteAccessMethod::pdo);
-      if (0xFF == digtal_out_write) {
-        digtal_out_write = 0x0;
-      }
+      // std::cout << " I am running." << std::endl;
     }
   }
   std::cout << "Finished." << std::endl;
