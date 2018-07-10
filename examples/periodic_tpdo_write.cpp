@@ -34,8 +34,8 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "../utils/include/parse_sdo.h"
-#include "../utils/src/parse_sdo.cpp"
+#include "../tools/include/parse_sdo.h"
+#include "../tools/src/parse_sdo.cpp"
 #include "core.h"
 #include "device.h"
 #include "logger.h"

@@ -34,8 +34,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "../utils/include/parse_sdo.h"
-#include "../utils/src/parse_sdo.cpp"
+#include "parse_sdo.h"
 #include "core.h"
 #include "device.h"
 #include "logger.h"
@@ -66,13 +65,6 @@ int main() {
   // "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".
   const std::string baudrate = "500K";
 
-  // Set the object dictionary index to write to (download).
-  // Here: CiA-401 (I/O device) digital output.
-
-  const uint16_t index_digtal_out_write = 0x2008;
-
-  // Alternative: CiA-402 (motor) control word:
-  // const uint16_t index = 0x6040;
   const uint16_t index_Qry_DIGIN = 0x210E;
   const uint16_t index_ch1_speed = 0x2000;
   const uint16_t index_ch2_speed = 0x2000;
@@ -80,14 +72,7 @@ int main() {
   const uint16_t index_ch2_speed_feedback = 0x2103;
   const uint16_t index_ch1_Battery_Amps = 0x210C;
   const uint16_t index_ch2_Battery_Amps = 0x210C;
-  const uint16_t index_Slave_TPDO1_map = 0x1A00;
-  const uint16_t index_Slave_TPDO2_map = 0x1A01;
-  const uint16_t index_Slave_TPDO3_map = 0x1A02;
-  // Set the object dictionary sub-index to write to (download).
-  // Here: CiA-401 (I/O device) digital output - second byte.
-  const uint8_t subindex_digtal_out_write = 0x00;
-  // Alternative: CiA-402 (motor) control word:
-  // const uint8_t subindex = 0x00;
+
   const uint8_t subindex_Qry_DIGIN = 0x00;
   const uint8_t subindex_ch1_speed = 0x01;
   const uint8_t subindex_ch2_speed = 0x02;
@@ -95,13 +80,7 @@ int main() {
   const uint8_t subindex_ch2_speed_feedback = 0x02;
   const uint8_t subindex_ch1_Battery_Amps = 0x01;
   const uint8_t subindex_ch2_Battery_Amps = 0x02;
-  const uint16_t subindex_Slave_TPDO1_map = 0x01;
-  const uint16_t subindex_Slave_TPDO2_map = 0x01;
-  const uint16_t subindex_Slave_TPDO3_map = 0x01;
-  // Set the data to write (download).
-  const std::vector<uint8_t> digtal_out_write{0x2};
-  const std::vector<uint8_t> subindex_Slave_TPD1_mapped_value{
-      0x00, 0x00, 0x00, 0x00};  // 0x20000210 0x2103,0x01,int16
+
   const std::vector<uint8_t> ch1_speed{
       0x34, 0xF3, 0xFF, 0xFF};  // speed reference to roboteq : +3276 .This is
                                 // the lowest valid reference.

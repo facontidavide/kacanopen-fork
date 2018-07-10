@@ -34,8 +34,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "../utils/include/parse_sdo.h"
-#include "../utils/src/parse_sdo.cpp"
+#include "parse_sdo.h"
 #include "canopen_error.h"
 #include "core.h"
 #include "device.h"
@@ -110,7 +109,7 @@ int main() {
             //                0x180 + node_id, "qry_abspeed/channel_1", 1,
             //                qry_abspeed_channel_1_callback);  // offset 1,
             device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_abspeed/channel_1", 1);  // offset 1,
+                0x180 + node_id, "qry_abspeed/channel_1", 0);  // offset 1,
             device->add_receive_pdo_mapping(
                 0x180 + node_id, "qry_abspeed/channel_2", 2);  // offset 2,
             device->add_receive_pdo_mapping(
@@ -122,6 +121,7 @@ int main() {
         }
       });
   uint8_t digtal_out_write = 0x0;
+
   while (keepRunning) {
     if (node_initialized) {
 

@@ -70,7 +70,7 @@ There are several examples has been implemented in the "example" folder.
 
 * __periodic_tpdo_write.cpp:__ This example shows how to use periodic PDO transfer by the master. A transmit pdo has been configured which will be received by the device rpdo1 periodically at every 250ms.
 
-* __simple_pdo_rw_dynamic_mapping.cpp:__ This example shows how to access a slave device with PDOs only. The slave device must be preconfigured to transmit TPDOs and receive RPDOs. Dynamic pdo mapping for the slave device has been implemented SDO transfer.
+* __simple_pdo_rw_dynamic_mapping.cpp:__ This example shows how to access a slave device with PDOs only. The slave device must be preconfigured to transmit TPDOs and receive RPDOs. Dynamic pdo mapping for the slave device has been implemented using SDO transfer.
 
 ## Documentation
 

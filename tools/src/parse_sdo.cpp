@@ -1,5 +1,6 @@
-#include "../include/parse_sdo.h"
+#include "parse_sdo.h"
 #include <cstdint>
+
 int32_t parse_sdo_read(std::vector<uint8_t> sdo_to_read) {
   unsigned char sdo_read_byte[] = {0x00, 0x00, 0x00, 0x00};
   for (unsigned int i = 0; i < sdo_to_read.size(); i++) {

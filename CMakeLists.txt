@@ -116,7 +116,7 @@ endif()
 include_directories(${CMAKE_CURRENT_LIST_DIR}/core/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/master/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/ros_bridge/include)
-
+include_directories(${CMAKE_CURRENT_LIST_DIR}/tools/include)
 
 ### Installation ###
 
@@ -170,5 +170,6 @@ add_subdirectory(drivers)
 add_subdirectory(core)
 add_subdirectory(master)
 add_subdirectory(examples)
+add_subdirectory(tools)
 
 
