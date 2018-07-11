@@ -64,13 +64,13 @@ There are several examples has been implemented in the "example" folder.
 
 * __pdo.cpp:__ This example runs a counter completely without SDO transfers.There must be a CiA 401 device which is configured to send 'Read input 8-bit/Digital Inputs 1-8'and 'Read input 8-bit/Digital Inputs 9-16' via TPDO1 and to receive 'Write output 8-bit/Digital Outputs 1-8' via RPDO1.
 
-* __simple_sdo_rw.cpp:__ This example shows how to access a slave device with SDO read write. Alsmost all the device parameters can be read and or write by SDO transfer only. But this will not be time optimised as SDOs are not meant to be used for real time/ time critical parameters.
+* __simple_sdo_rw.cpp:__ This example shows how to access a slave device with SDO read write. Alsmost all the device parameters can be read and or write by SDO transfer only. But this will not be time optimised as SDOs are not meant to be used for real time/ time critical parameters. A Roboteq CANOpen motor driver was used to test the program.
 
-* __simple_pdo_rw.cpp:__ This example shows how to access a slave device with PDOs only. The slave device must be preconfigured to transmit TPDOs and receive RPDOs. Dynamic pdo mapping for the slave device has not been shown in this exmple, though this can be done by simple SDO transfer.
+* __simple_pdo_rw.cpp:__ This example shows how to access a slave device with PDOs only. The slave device must be preconfigured to transmit TPDOs and receive RPDOs. Dynamic pdo mapping for the slave device has not been shown in this exmple, though this can be done by simple SDO transfer.A Roboteq CANOpen motor driver was used to test the program.
 
-* __periodic_tpdo_write.cpp:__ This example shows how to use periodic PDO transfer by the master. A transmit pdo has been configured which will be received by the device rpdo1 periodically at every 250ms.
+* __periodic_tpdo_write.cpp:__ This example shows how to use periodic PDO transfer by the master. A transmit pdo has been configured which will be received by the device rpdo1 periodically at every 250ms. A CANopenSocket simulated/emulated CiA401 slave.
 
-* __simple_pdo_rw_dynamic_mapping.cpp:__ This example shows how to access a slave device with PDOs only. The slave device must be preconfigured to transmit TPDOs and receive RPDOs. Dynamic pdo mapping for the slave device has been implemented using SDO transfer.
+* __simple_pdo_rw_dynamic_mapping.cpp:__ This example shows how to access a slave device with PDOs only. The slave device must be preconfigured to transmit TPDOs and receive RPDOs. Dynamic pdo mapping for the slave device has been implemented using SDO transfer.A CANopenSocket simulated/emulated CiA401 slave.
 
 ## Documentation
 

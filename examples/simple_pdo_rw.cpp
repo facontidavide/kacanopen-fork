@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2016, Thomas Keh
- * All rights reserved.
+ * Copyright (c) 2018-2019, Musarraf Hossain
+ * All rights reservd.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,14 +34,15 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "parse_sdo.h"
 #include "canopen_error.h"
 #include "core.h"
 #include "device.h"
+#include "device_rpdo.h"
+#include "device_tpdo.h"
 #include "logger.h"
 #include "master.h"
+#include "parse_sdo.h"
 #include "receive_pdo_mapping.h"
-
 static volatile int keepRunning = 1;
 
 void intHandler(int dummy) { keepRunning = 0; }
@@ -59,14 +60,14 @@ int main() {
   // Preferences //
   // ----------- //
 
-  // A Roboteq motor driver was used to test this program //
+  // A Roboteq motor driver was used to test this program.//
 
   // The node ID of the slave we want to communicate with.
   const uint8_t node_id = 4;
 
   // Set the name of your CAN bus. "slcan0" is a common bus name
   // for the first SocketCAN device on a Linux system.
-  const std::string busname = "can0";
+  const std::string busname = "slcan0";
 
   // Set the baudrate of your CAN bus. Most drivers support the values
   // "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".
@@ -101,29 +102,61 @@ int main() {
 
             device.reset(new kaco::Device(core, node_id));
             device->load_dictionary_from_eds(
-                "/home/mhs/Desktop/EDS/roboteq_motor_controllers_v80beta.eds");
-            device->add_transmit_pdo_mapping(0x200 + node_id, {{"Cmd_DOUT", 0}},
-                                             kaco::TransmissionType::ON_CHANGE,
-                                             std::chrono::milliseconds(250));
-            //            device->add_receive_pdo_mapping(
-            //                0x180 + node_id, "qry_abspeed/channel_1", 1,
-            //                qry_abspeed_channel_1_callback);  // offset 1,
-            device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_abspeed/channel_1", 0);  // offset 1,
-            device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_abspeed/channel_2", 2);  // offset 2,
-            device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_batamps/channel_1", 4);  // offset 4,
-            device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_batamps/channel_2", 6);  // offset 6,
+                "/home/mhs/bor/test/CANopenSocket/canopend/objDict/"
+                "roboteq_motor_controllers_v80beta.eds");
             node_initialized = true;
           }
         }
       });
-  uint8_t digtal_out_write = 0x0;
-
+  bool first_time(true);
+  int channel1_speed_ref = 0;
+  int channel2_speed_ref = 0;
+  bool max = false;
+  // const std::vector<uint8_t> ch1_speed{0, 0, 0, 0, 0, 0, 0, 0};
   while (keepRunning) {
     if (node_initialized) {
+      if (first_time) {
+        device->add_transmit_pdo_mapping(0x200 + node_id, {{"Cmd_DOUT", 0}},
+                                         kaco::TransmissionType::ON_CHANGE,
+                                         std::chrono::milliseconds(250));
+        device->add_receive_pdo_mapping(
+            0x180 + node_id, "qry_abspeed/channel_1", 0);  // offset 1,
+        device->add_receive_pdo_mapping(
+            0x180 + node_id, "qry_abspeed/channel_2", 2);  // offset 2,
+        device->add_receive_pdo_mapping(
+            0x180 + node_id, "qry_batamps/channel_1", 4);  // offset 4,
+        device->add_receive_pdo_mapping(
+            0x180 + node_id, "qry_batamps/channel_2", 6);  // offset 6
+        device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_int",
+                                        0);  // offset 1,
+        device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_bat",
+                                        2);  // offset 2,
+        device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_5vout",
+                                        4);  // offset 4,
+        device->add_receive_pdo_mapping(0x280 + node_id,
+                                        "qry_abspeed/channel_1",
+                                        6);  // offset 6
+        device->add_transmit_pdo_mapping(
+            0x200 + node_id, {{"cmd_cango/cmd_cango_1", 0}},
+            kaco::TransmissionType::ON_CHANGE, std::chrono::milliseconds(250));
+        device->add_transmit_pdo_mapping(
+            0x200 + node_id, {{"cmd_cango/cmd_cango_2", 4}},
+            kaco::TransmissionType::ON_CHANGE, std::chrono::milliseconds(250));
+        const std::vector<uint32_t> tpdo1_entries_to_be_mapped{
+            0x21030110, 0x21030210, 0x210C0110, 0x21000110};  // 0x21000110
+        const std::vector<uint32_t> tpdo2_entries_to_be_mapped{
+            0x210D0110, 0x210D0210, 0x210D0310, 0x21030110};  // 0x21330010
+        // map_tpdo_in_device(tpdo1, tpdo1_entries_to_be_mapped, 255, 100, 500,
+        //                   device, node_id);
+        // map_tpdo_in_device(tpdo2, tpdo2_entries_to_be_mapped, 255, 100, 500,
+        //                   device, node_id);
+        const std::vector<uint32_t> rpdo_entries_to_be_mapped{0x20000120};
+        map_rpdo_in_device(rpdo1, rpdo_entries_to_be_mapped, 255, 100, 500,
+                           device, node_id);
+        first_time = false;
+      }
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
       try {
         DUMP_HEX(
@@ -140,12 +173,65 @@ int main() {
                               kaco::ReadAccessMethod::pdo_request_and_wait));
       } catch (kaco::canopen_error exception) {
       }
-      digtal_out_write++;
-      device->set_entry("Cmd_DOUT", digtal_out_write,
-                        kaco::WriteAccessMethod::pdo);
-      if (0xFF == digtal_out_write) {
-        digtal_out_write = 0x0;
+      if (3000 > channel1_speed_ref && max == false) {
+        // channel1_speed_ref++;
+        channel1_speed_ref = channel1_speed_ref + 100;
+        if (3000 == channel1_speed_ref) {
+          max = true;
+        }
       }
+      if (-3000 < channel1_speed_ref && max == true) {
+        // channel1_speed_ref--;
+        channel1_speed_ref = channel1_speed_ref - 100;
+        if (-3000 == channel1_speed_ref) {
+          max = false;
+        }
+      }
+      // core.pdo.send(0x204, ch1_speed); // raw pdo message
+      device->set_entry("cmd_cango/cmd_cango_1",
+                        static_cast<int>(channel1_speed_ref),
+                        kaco::WriteAccessMethod::pdo);
+      int16_t ch1_speed_feedback =
+          device->get_entry("qry_abspeed/channel_1",
+                            kaco::ReadAccessMethod::pdo_request_and_wait);
+      int16_t ch2_speed_feedback =
+          device->get_entry("qry_abspeed/channel_2",
+                            kaco::ReadAccessMethod::pdo_request_and_wait);
+      uint16_t v_int = device->get_entry(
+          "qry_volts/v_int", kaco::ReadAccessMethod::pdo_request_and_wait);
+      uint16_t v_bat = device->get_entry(
+          "qry_volts/v_bat", kaco::ReadAccessMethod::pdo_request_and_wait);
+      uint16_t v_5vout = device->get_entry(
+          "qry_volts/v_5vout", kaco::ReadAccessMethod::pdo_request_and_wait);
+      int16_t abspeed1 =
+          device->get_entry("qry_abspeed/channel_1",
+                            kaco::ReadAccessMethod::pdo_request_and_wait);
+      uint16_t digout =
+          device->get_entry("qry_digout", kaco::ReadAccessMethod::sdo);
+      std::cout << "Channel 1 speed command = " << std::dec
+                << channel1_speed_ref << std::endl;
+      std::cout << "Channel 1 speed feedback = " << std::dec
+                << (-ch1_speed_feedback) << std::endl;
+      std::cout << "Channel 2 speed command = " << std::dec
+                << channel2_speed_ref << std::endl;
+      std::cout << "Channel 2 speed feedback = " << std::dec
+                << ch2_speed_feedback << std::endl;
+      std::cout << "Internal Voltage = " << std::dec
+                << static_cast<float>(static_cast<float>(v_int) /
+                                      static_cast<float>(10))
+                << "V" << std::endl;
+      std::cout << "Battery Voltage = " << std::dec
+                << static_cast<float>(static_cast<float>(v_bat) /
+                                      static_cast<float>(10))
+                << "V" << std::endl;
+      std::cout << "Internal 5V supply = " << std::dec
+                << static_cast<float>(static_cast<float>(v_5vout) /
+                                      static_cast<float>(1000))
+                << "V" << std::endl;
+      std::cout << "Status of Digital Outs = " << std::hex << digout << ""
+                << std::endl;
+      std::cout << "Absolute speed feedback = " << std::dec << abspeed1 << ""
+                << std::endl;
     }
   }
   std::cout << "Finished." << std::endl;

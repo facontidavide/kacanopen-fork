@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Thomas Keh
+ * Copyright (c) 2018-2019, Musarraf Hossain
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,11 +34,11 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "parse_sdo.h"
 #include "core.h"
 #include "device.h"
 #include "logger.h"
 #include "master.h"
+#include "parse_sdo.h"
 
 static volatile int keepRunning = 1;
 
@@ -59,7 +59,7 @@ int main() {
 
   // Set the name of your CAN bus. "slcan0" is a common bus name
   // for the first SocketCAN device on a Linux system.
-  const std::string busname = "can0";
+  const std::string busname = "slcan0";
 
   // Set the baudrate of your CAN bus. Most drivers support the values
   // "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".

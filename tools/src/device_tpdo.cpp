@@ -14,11 +14,14 @@ void map_tpdo_in_device(TPDO_NO tpdo_no,
                         uint8_t transmit_type, uint16_t inhibit_time,
                         uint16_t event_timer,
                         std::shared_ptr<kaco::Device> device, uint8_t node_id) {
+  uint32_t cob_id = 0;
   switch (tpdo_no) {
     case tpdo1:
       std::cout << "Mapping TPDO1" << std::endl;
-      // disable tpdo3
-      device->set_entry(0x1800, 0x01, static_cast<uint32_t>(0x80000180+node_id),
+      // disable tpdo
+      cob_id = device->get_entry(0x1800, 01, kaco::ReadAccessMethod::sdo);
+      cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));
+      device->set_entry(0x1800, 0x01, static_cast<uint32_t>(cob_id),
                         kaco::WriteAccessMethod::sdo);
       // delete no. of mapped entries
       device->set_entry(0x1A00, 0x00, static_cast<uint8_t>(0x00),
@@ -39,67 +42,82 @@ void map_tpdo_in_device(TPDO_NO tpdo_no,
       device->set_entry(0x1800, 0x05, event_timer,
                         kaco::WriteAccessMethod::sdo);
       // enable tpdo1
-      device->set_entry(0x1800, 0x01, static_cast<uint32_t>(0x00000180+node_id),
+      cob_id ^= static_cast<uint32_t>((-0 ^ cob_id) & (1UL << 31));
+      device->set_entry(0x1800, 0x01, static_cast<uint32_t>(cob_id),
                         kaco::WriteAccessMethod::sdo);
       break;
     case tpdo2:
-    std::cout << "Mapping TPDO2" << std::endl;
-    // disable tpdo3
-    device->set_entry(0x1801, 0x01, static_cast<uint32_t>(0x80000280+node_id),
-                      kaco::WriteAccessMethod::sdo);
-    // delete no. of mapped entries
-    device->set_entry(0x1A01, 0x00, static_cast<uint8_t>(0x00),
-                      kaco::WriteAccessMethod::sdo);
-    // add new mapping
-    write_entry(0x1A01, entries_to_be_mapped, device);
-    // update no. of mapped entries
-    device->set_entry(0x1A01, 0x00,
-                      static_cast<uint8_t>(entries_to_be_mapped.size()),
-                      kaco::WriteAccessMethod::sdo);
-    // set transmit type
-    device->set_entry(0x1801, 0x02, transmit_type,
-                      kaco::WriteAccessMethod::sdo);
-    // set inhibit time
-    device->set_entry(0x1801, 0x03, inhibit_time,
-                      kaco::WriteAccessMethod::sdo);
-    // set event timer i.e transmit frequency
-    device->set_entry(0x1801, 0x05, event_timer,
-                      kaco::WriteAccessMethod::sdo);
-    // enable tpdo1
-    device->set_entry(0x1801, 0x01, static_cast<uint32_t>(0x00000280+node_id),
-                      kaco::WriteAccessMethod::sdo);
+      std::cout << "Mapping TPDO2" << std::endl;
+      cob_id = device->get_entry(0x1801, 01, kaco::ReadAccessMethod::sdo);
+//      std::cout << "TPDO2 cob id found = " << std::hex <<cob_id << std::endl;;
+//      if (cob_id!=0x40000280+node_id){
+//        cob_id=0x40000280+node_id;
+//      }
+      cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));
+      std::cout << "TPDO2 to disable = " << std::hex <<cob_id << std::endl;;
+      // disable tpdo2
+      device->set_entry(0x1801, 0x01, static_cast<uint32_t>(cob_id),
+                        kaco::WriteAccessMethod::sdo);
+      // delete no. of mapped entries
+      device->set_entry(0x1A01, 0x00, static_cast<uint8_t>(0x00),
+                        kaco::WriteAccessMethod::sdo);
+      // add new mapping
+      write_entry(0x1A01, entries_to_be_mapped, device);
+      // update no. of mapped entries
+      device->set_entry(0x1A01, 0x00,
+                        static_cast<uint8_t>(entries_to_be_mapped.size()),
+                       kaco::WriteAccessMethod::sdo);
+      // set transmit type
+      device->set_entry(0x1801, 0x02, transmit_type,
+                        kaco::WriteAccessMethod::sdo);
+      // set inhibit time
+      device->set_entry(0x1801, 0x03, inhibit_time,
+                        kaco::WriteAccessMethod::sdo);
+      // set event timer i.e transmit frequency
+      device->set_entry(0x1801, 0x05, event_timer,
+                        kaco::WriteAccessMethod::sdo);
+      // enable tpdo2
+      cob_id ^= static_cast<uint32_t>((-0 ^ cob_id) & (1UL << 31));
+
+      device->set_entry(0x1801, 0x01, static_cast<uint32_t>(cob_id),
+                        kaco::WriteAccessMethod::sdo);
       break;
     case tpdo3:
-    std::cout << "Mapping TPDO3" << std::endl;
-    // disable tpdo3
-    device->set_entry(0x1802, 0x01, static_cast<uint32_t>(0x80000380+node_id),
-                      kaco::WriteAccessMethod::sdo);
-    // delete no. of mapped entries
-    device->set_entry(0x1A02, 0x00, static_cast<uint8_t>(0x00),
-                      kaco::WriteAccessMethod::sdo);
-    // add new mapping
-    write_entry(0x1A02, entries_to_be_mapped, device);
-    // update no. of mapped entries
-    device->set_entry(0x1A02, 0x00,
-                      static_cast<uint8_t>(entries_to_be_mapped.size()),
-                      kaco::WriteAccessMethod::sdo);
-    // set transmit type
-    device->set_entry(0x1802, 0x02, transmit_type,
-                      kaco::WriteAccessMethod::sdo);
-    // set inhibit time
-    device->set_entry(0x1802, 0x03, inhibit_time,
-                      kaco::WriteAccessMethod::sdo);
-    // set event timer i.e transmit frequency
-    device->set_entry(0x1802, 0x05, event_timer,
-                      kaco::WriteAccessMethod::sdo);
-    // enable tpdo1
-    device->set_entry(0x1802, 0x01, static_cast<uint32_t>(0x00000380+node_id),
-                      kaco::WriteAccessMethod::sdo);
+      std::cout << "Mapping TPDO3" << std::endl;
+      // disable tpdo3
+      cob_id = device->get_entry(0x1802, 01, kaco::ReadAccessMethod::sdo);
+      cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));
+      device->set_entry(0x1802, 0x01, static_cast<uint32_t>(cob_id),
+                        kaco::WriteAccessMethod::sdo);
+      // delete no. of mapped entries
+      device->set_entry(0x1A02, 0x00, static_cast<uint8_t>(0x00),
+                        kaco::WriteAccessMethod::sdo);
+      // add new mapping
+      write_entry(0x1A02, entries_to_be_mapped, device);
+      // update no. of mapped entries
+      device->set_entry(0x1A02, 0x00,
+                        static_cast<uint8_t>(entries_to_be_mapped.size()),
+                        kaco::WriteAccessMethod::sdo);
+      // set transmit type
+      device->set_entry(0x1802, 0x02, transmit_type,
+                        kaco::WriteAccessMethod::sdo);
+      // set inhibit time
+      device->set_entry(0x1802, 0x03, inhibit_time,
+                        kaco::WriteAccessMethod::sdo);
+      // set event timer i.e transmit frequency
+      device->set_entry(0x1802, 0x05, event_timer,
+                        kaco::WriteAccessMethod::sdo);
+      // enable tpdo3
+      cob_id ^= static_cast<uint32_t>((-0 ^ cob_id) & (1UL << 31));
+      device->set_entry(0x1802, 0x01, static_cast<uint32_t>(cob_id),
+                        kaco::WriteAccessMethod::sdo);
       break;
     case tpdo4:
       std::cout << "Mapping TPDO4" << std::endl;
-      // disable tpdo3
-      device->set_entry(0x1803, 0x01, static_cast<uint32_t>(0x80000480+node_id),
+      // disable tpdo4
+      cob_id = device->get_entry(0x1803, 01, kaco::ReadAccessMethod::sdo);
+      cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));
+      device->set_entry(0x1803, 0x01, static_cast<uint32_t>(cob_id),
                         kaco::WriteAccessMethod::sdo);
       // delete no. of mapped entries
       device->set_entry(0x1A03, 0x00, static_cast<uint8_t>(0x00),
@@ -119,8 +137,9 @@ void map_tpdo_in_device(TPDO_NO tpdo_no,
       // set event timer i.e transmit frequency
       device->set_entry(0x1803, 0x05, event_timer,
                         kaco::WriteAccessMethod::sdo);
-      // enable tpdo3
-      device->set_entry(0x1803, 0x01, static_cast<uint32_t>(0x00000480+node_id),
+      // enable tpdo4
+      cob_id ^= static_cast<uint32_t>((-0 ^ cob_id) & (1UL << 31));
+      device->set_entry(0x1803, 0x01, static_cast<uint32_t>(cob_id),
                         kaco::WriteAccessMethod::sdo);
       break;
 

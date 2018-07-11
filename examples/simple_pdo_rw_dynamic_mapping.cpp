@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Thomas Keh
+ * Copyright (c) 2018-2019, Musarraf Hossain
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,20 +34,20 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "parse_sdo.h"
 #include "canopen_error.h"
 #include "core.h"
 #include "device.h"
+#include "device_tpdo.h"
 #include "logger.h"
 #include "master.h"
+#include "parse_sdo.h"
 #include "receive_pdo_mapping.h"
-#include "device_tpdo.h"
 
 static volatile int keepRunning = 1;
 
 void intHandler(int dummy) { keepRunning = 0; }
 
-//void qry_abspeed_channel_1_callback(const kaco::ReceivePDOMapping& mapping,
+// void qry_abspeed_channel_1_callback(const kaco::ReceivePDOMapping& mapping,
 //                                    std::vector<uint8_t> data) {
 //  std::cout << "hola" << std::endl;
 //}
@@ -60,7 +60,7 @@ int main() {
   // Preferences //
   // ----------- //
 
-  // A Roboteq motor driver was used to test this program //
+  // A simulated CANopenSocket CiA-401 Slave was used to test this program //
 
   // The node ID of the slave we want to communicate with.
   const uint8_t node_id = 4;
@@ -101,7 +101,8 @@ int main() {
             found_node = true;
             device.reset(new kaco::Device(core, node_id));
             device->load_dictionary_from_eds(
-                "/home/mhs/bor/test/CANopenSocket/canopend/objDict/roboteq_motor_controllers_v80beta.eds");
+                "/home/mhs/bor/test/CANopenSocket/canopend/objDict/"
+                "roboteq_motor_controllers_v80beta.eds");
             device->add_transmit_pdo_mapping(0x200 + node_id, {{"Cmd_DOUT", 0}},
                                              kaco::TransmissionType::ON_CHANGE,
                                              std::chrono::milliseconds(250));
@@ -112,18 +113,25 @@ int main() {
             device->add_receive_pdo_mapping(
                 0x180 + node_id, "qry_batamps/channel_1", 4);  // offset 4,
             device->add_receive_pdo_mapping(
-                0x180 + node_id, "qry_batamps/channel_2", 6);  // offset 6,          
-            const std::vector<uint32_t> entries_to_be_mapped{0x210C0110,0x210C0210,0x210C0110,0x210C0210};
-            map_tpdo_in_device(tpdo4, entries_to_be_mapped, 255, 100, 500, device,node_id);
-            map_tpdo_in_device(tpdo3, entries_to_be_mapped, 255, 100, 500, device,node_id);
-            map_tpdo_in_device(tpdo2, entries_to_be_mapped, 255, 100, 500, device,node_id);
-            map_tpdo_in_device(tpdo1, entries_to_be_mapped, 255, 100, 500, device,node_id);
+                0x180 + node_id, "qry_batamps/channel_2", 6);  // offset 6,
+            // 0x21030110, 0x21030210, 0x210C0110, 0x21000110
+            // 0x210C0110,0x210C0210,0x210C0110,0x210C0210
+            const std::vector<uint32_t> entries_to_be_mapped{
+                0x210C0110, 0x210C0210, 0x210C0110, 0x210C0210};
+            // map_tpdo_in_device(tpdo4, entries_to_be_mapped, 255, 100, 500,
+            // device,node_id);
+            map_tpdo_in_device(tpdo3, entries_to_be_mapped, 255, 100, 500,
+                               device, node_id);
+            map_tpdo_in_device(tpdo2, entries_to_be_mapped, 255, 100, 500,
+                               device, node_id);
+            map_tpdo_in_device(tpdo1, entries_to_be_mapped, 255, 100, 500,
+                               device, node_id);
             node_initialized = true;
           }
         }
       });
   uint8_t digtal_out_write = 0x0;
-  //core.nmt.send_nmt_message(04,kaco::NMT::Command::reset_communication);
+  // core.nmt.send_nmt_message(04,kaco::NMT::Command::reset_communication);
   while (keepRunning) {
     if (node_initialized) {
       DUMP_HEX(device->get_entry(0x1A03, 0x01, kaco::ReadAccessMethod::sdo));
