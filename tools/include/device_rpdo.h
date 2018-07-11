@@ -20,4 +20,4 @@ void map_rpdo_in_device(RPDO_NO tpdo_no,
                         std::vector<uint32_t> entries_to_be_mapped,
                         uint8_t transmit_type, uint16_t inhibit_time,
                         uint16_t event_timer,
-                        std::shared_ptr<kaco::Device> device, uint8_t node_id);
+                        std::shared_ptr<kaco::Device> device);

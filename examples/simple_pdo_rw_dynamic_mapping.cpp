@@ -121,11 +121,11 @@ int main() {
             // map_tpdo_in_device(tpdo4, entries_to_be_mapped, 255, 100, 500,
             // device,node_id);
             map_tpdo_in_device(tpdo3, entries_to_be_mapped, 255, 100, 500,
-                               device, node_id);
+                               device);
             map_tpdo_in_device(tpdo2, entries_to_be_mapped, 255, 100, 500,
-                               device, node_id);
+                               device);
             map_tpdo_in_device(tpdo1, entries_to_be_mapped, 255, 100, 500,
-                               device, node_id);
+                               device);
             node_initialized = true;
           }
         }

@@ -67,7 +67,7 @@ int main() {
 
   // Set the name of your CAN bus. "slcan0" is a common bus name
   // for the first SocketCAN device on a Linux system.
-  const std::string busname = "slcan0";
+  const std::string busname = "can0";
 
   // Set the baudrate of your CAN bus. Most drivers support the values
   // "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".
@@ -110,7 +110,7 @@ int main() {
       });
   bool first_time(true);
   int channel1_speed_ref = 0;
-  int channel2_speed_ref = 0;
+  int channel2_speed_ref = 3000;
   bool max = false;
   // const std::vector<uint8_t> ch1_speed{0, 0, 0, 0, 0, 0, 0, 0};
   while (keepRunning) {
@@ -134,7 +134,7 @@ int main() {
         device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_5vout",
                                         4);  // offset 4,
         device->add_receive_pdo_mapping(0x280 + node_id,
-                                        "qry_abspeed/channel_1",
+                                        "qry_digout",
                                         6);  // offset 6
         device->add_transmit_pdo_mapping(
             0x200 + node_id, {{"cmd_cango/cmd_cango_1", 0}},
@@ -143,16 +143,17 @@ int main() {
             0x200 + node_id, {{"cmd_cango/cmd_cango_2", 4}},
             kaco::TransmissionType::ON_CHANGE, std::chrono::milliseconds(250));
         const std::vector<uint32_t> tpdo1_entries_to_be_mapped{
-            0x21030110, 0x21030210, 0x210C0110, 0x21000110};  // 0x21000110
+            0x21030110, 0x21030210, 0x210C0110, 0x210C0210};
         const std::vector<uint32_t> tpdo2_entries_to_be_mapped{
-            0x210D0110, 0x210D0210, 0x210D0310, 0x21030110};  // 0x21330010
-        // map_tpdo_in_device(tpdo1, tpdo1_entries_to_be_mapped, 255, 100, 500,
-        //                   device, node_id);
-        // map_tpdo_in_device(tpdo2, tpdo2_entries_to_be_mapped, 255, 100, 500,
-        //                   device, node_id);
+            0x210D0110, 0x210D0210, 0x210D0310,
+            0x21130010};  // {0x210D0110, 0x210D0210, 0x210D0310, 0x21030110}
+        map_tpdo_in_device(tpdo1, tpdo1_entries_to_be_mapped, 255, 100, 250,
+                           device);
+        map_tpdo_in_device(tpdo2, tpdo2_entries_to_be_mapped, 255, 100, 250,
+                           device);
         const std::vector<uint32_t> rpdo_entries_to_be_mapped{0x20000120};
-        map_rpdo_in_device(rpdo1, rpdo_entries_to_be_mapped, 255, 100, 500,
-                           device, node_id);
+        map_rpdo_in_device(rpdo1, rpdo_entries_to_be_mapped, 255, 100, 250,
+                           device);
         first_time = false;
       }
 
@@ -191,46 +192,44 @@ int main() {
       device->set_entry("cmd_cango/cmd_cango_1",
                         static_cast<int>(channel1_speed_ref),
                         kaco::WriteAccessMethod::pdo);
+      std::cout << "Channel 1 speed command = " << std::dec
+                << channel1_speed_ref << std::endl;
       int16_t ch1_speed_feedback =
           device->get_entry("qry_abspeed/channel_1",
                             kaco::ReadAccessMethod::pdo_request_and_wait);
+      std::cout << "Channel 1 speed feedback = " << std::dec
+                << (ch1_speed_feedback) << std::endl;
+//      device->set_entry("cmd_cango/cmd_cango_2",
+//                        static_cast<int>(channel2_speed_ref),
+//                        kaco::WriteAccessMethod::pdo);
+      std::cout << "Channel 2 speed command = " << std::dec
+                << channel2_speed_ref << std::endl;
       int16_t ch2_speed_feedback =
           device->get_entry("qry_abspeed/channel_2",
                             kaco::ReadAccessMethod::pdo_request_and_wait);
-      uint16_t v_int = device->get_entry(
-          "qry_volts/v_int", kaco::ReadAccessMethod::pdo_request_and_wait);
-      uint16_t v_bat = device->get_entry(
-          "qry_volts/v_bat", kaco::ReadAccessMethod::pdo_request_and_wait);
-      uint16_t v_5vout = device->get_entry(
-          "qry_volts/v_5vout", kaco::ReadAccessMethod::pdo_request_and_wait);
-      int16_t abspeed1 =
-          device->get_entry("qry_abspeed/channel_1",
-                            kaco::ReadAccessMethod::pdo_request_and_wait);
-      uint16_t digout =
-          device->get_entry("qry_digout", kaco::ReadAccessMethod::sdo);
-      std::cout << "Channel 1 speed command = " << std::dec
-                << channel1_speed_ref << std::endl;
-      std::cout << "Channel 1 speed feedback = " << std::dec
-                << (-ch1_speed_feedback) << std::endl;
-      std::cout << "Channel 2 speed command = " << std::dec
-                << channel2_speed_ref << std::endl;
       std::cout << "Channel 2 speed feedback = " << std::dec
                 << ch2_speed_feedback << std::endl;
+      uint16_t v_int = device->get_entry(
+          "qry_volts/v_int", kaco::ReadAccessMethod::pdo_request_and_wait);
       std::cout << "Internal Voltage = " << std::dec
                 << static_cast<float>(static_cast<float>(v_int) /
                                       static_cast<float>(10))
                 << "V" << std::endl;
+      uint16_t v_bat = device->get_entry(
+          "qry_volts/v_bat", kaco::ReadAccessMethod::pdo_request_and_wait);
       std::cout << "Battery Voltage = " << std::dec
                 << static_cast<float>(static_cast<float>(v_bat) /
                                       static_cast<float>(10))
                 << "V" << std::endl;
+      uint16_t v_5vout = device->get_entry(
+          "qry_volts/v_5vout", kaco::ReadAccessMethod::pdo_request_and_wait);
       std::cout << "Internal 5V supply = " << std::dec
                 << static_cast<float>(static_cast<float>(v_5vout) /
                                       static_cast<float>(1000))
                 << "V" << std::endl;
+      uint16_t digout =
+          device->get_entry("qry_digout", kaco::ReadAccessMethod::pdo_request_and_wait);
       std::cout << "Status of Digital Outs = " << std::hex << digout << ""
-                << std::endl;
-      std::cout << "Absolute speed feedback = " << std::dec << abspeed1 << ""
                 << std::endl;
     }
   }

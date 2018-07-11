@@ -13,7 +13,7 @@ void map_tpdo_in_device(TPDO_NO tpdo_no,
                         std::vector<uint32_t> entries_to_be_mapped,
                         uint8_t transmit_type, uint16_t inhibit_time,
                         uint16_t event_timer,
-                        std::shared_ptr<kaco::Device> device, uint8_t node_id) {
+                        std::shared_ptr<kaco::Device> device) {
   uint32_t cob_id = 0;
   switch (tpdo_no) {
     case tpdo1:
@@ -54,7 +54,6 @@ void map_tpdo_in_device(TPDO_NO tpdo_no,
 //        cob_id=0x40000280+node_id;
 //      }
       cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));
-      std::cout << "TPDO2 to disable = " << std::hex <<cob_id << std::endl;;
       // disable tpdo2
       device->set_entry(0x1801, 0x01, static_cast<uint32_t>(cob_id),
                         kaco::WriteAccessMethod::sdo);
