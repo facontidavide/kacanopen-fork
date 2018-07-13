@@ -67,7 +67,7 @@ int main() {
 
   // Set the name of your CAN bus. "slcan0" is a common bus name
   // for the first SocketCAN device on a Linux system.
-  const std::string busname = "slcan0";
+  const std::string busname = "can0";
 
   // Set the baudrate of your CAN bus. Most drivers support the values
   // "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".
@@ -78,6 +78,10 @@ int main() {
   // -------------- //
   // Create core.
   kaco::Core core;
+  volatile bool found_node = false;
+  volatile bool node_initialized = false;
+  volatile bool node_connected = false;
+  volatile bool first_time(false);
   std::cout << "Starting Core (connect to the driver and start the receiver "
                "thread)..."
             << std::endl;
@@ -88,31 +92,45 @@ int main() {
   // Create device pointer
   std::shared_ptr<kaco::Device> device;
   // This will be set to true by the callback below.
-  bool found_node = false;
-  bool node_initialized = false;
+
   std::cout << "Registering a callback which is called when a device is "
                "detected via NMT..."
             << std::endl;
+
   core.nmt.register_device_alive_callback(
       [&](const uint8_t new_node_id) mutable {
         // Check if this is the node we are looking for.
+
         if (new_node_id == node_id) {
           if (!found_node) {
-            found_node = true;
-
             device.reset(new kaco::Device(core, node_id));
             device->load_dictionary_from_eds(
                 "/home/mhs/bor/test/CANopenSocket/canopend/objDict/"
                 "roboteq_motor_controllers_v80beta.eds");
             node_initialized = true;
+            first_time = true;
+            found_node = true;
+            node_connected = false;
           }
         }
       });
-  bool first_time(true);
+  core.nmt.register_device_dead_callback(
+      [&](const uint8_t current_node_id) mutable {
+        // Check if our node is disconnected.
+        node_connected = false;
+        first_time = true;
+        found_node = false;
+        node_initialized = false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::cout << "Device with Node ID=0x" << std::hex << current_node_id
+                  << " is disconnected...." << std::endl;
+        exit(1); // TO DO the
+        // This callback idealy should reinitiate the connection with the device
+      });
+
   int channel1_speed_ref = 0;
-//  int channel2_speed_ref = 3000;
+  int channel2_speed_ref = 0;
   bool max = false;
-  // const std::vector<uint8_t> ch1_speed{0, 0, 0, 0, 0, 0, 0, 0};
   while (keepRunning) {
     if (node_initialized) {
       if (first_time) {
@@ -159,18 +177,18 @@ int main() {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
       try {
-//        DUMP_HEX(
-//            device->get_entry("qry_abspeed/channel_1",
-//                              kaco::ReadAccessMethod::pdo_request_and_wait));
-//        DUMP_HEX(
-//            device->get_entry("qry_abspeed/channel_2",
-//                              kaco::ReadAccessMethod::pdo_request_and_wait));
-//        DUMP_HEX(
-//            device->get_entry("qry_batamps/channel_1",
-//                              kaco::ReadAccessMethod::pdo_request_and_wait));
-//        DUMP_HEX(
-//            device->get_entry("qry_batamps/channel_2",
-//                              kaco::ReadAccessMethod::pdo_request_and_wait));
+        //        DUMP_HEX(
+        //            device->get_entry("qry_abspeed/channel_1",
+        //                              kaco::ReadAccessMethod::pdo_request_and_wait));
+        //        DUMP_HEX(
+        //            device->get_entry("qry_abspeed/channel_2",
+        //                              kaco::ReadAccessMethod::pdo_request_and_wait));
+        //        DUMP_HEX(
+        //            device->get_entry("qry_batamps/channel_1",
+        //                              kaco::ReadAccessMethod::pdo_request_and_wait));
+        //        DUMP_HEX(
+        //            device->get_entry("qry_batamps/channel_2",
+        //                              kaco::ReadAccessMethod::pdo_request_and_wait));
       } catch (kaco::canopen_error exception) {
       }
       if (3000 > channel1_speed_ref && max == false) {
@@ -187,6 +205,7 @@ int main() {
           max = false;
         }
       }
+      channel2_speed_ref = channel1_speed_ref;
       // core.pdo.send(0x204, ch1_speed); // raw pdo message
       device->set_entry("cmd_cango/cmd_cango_1",
                         static_cast<int>(channel1_speed_ref),
@@ -199,7 +218,7 @@ int main() {
       std::cout << "Channel 1 speed feedback = " << std::dec
                 << (ch1_speed_feedback) << std::endl;
       device->set_entry("cmd_cango/cmd_cango_2",
-                        static_cast<int>(channel1_speed_ref),
+                        static_cast<int>(channel2_speed_ref),
                         kaco::WriteAccessMethod::pdo);
       std::cout << "Channel 2 speed command = " << std::dec
                 << channel1_speed_ref << std::endl;
