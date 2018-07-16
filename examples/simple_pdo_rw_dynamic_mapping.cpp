@@ -93,6 +93,7 @@ int main() {
   std::cout << "Registering a callback which is called when a device is "
                "detected via NMT..."
             << std::endl;
+   // core.pdo.send(0x204, ch1_speed); // raw pdo message
   core.nmt.register_device_alive_callback(
       [&](const uint8_t new_node_id) mutable {
         // Check if this is the node we are looking for.
