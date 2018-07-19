@@ -48,8 +48,10 @@ namespace kaco {
 Device::Device(Core& core, uint8_t node_id)
 	: m_core(core), m_node_id(node_id), m_eds_library(m_dictionary, m_name_to_address) { }
 
-Device::~Device() 
-	{ }
+Device::~Device() {
+  for (auto& cob_id : cob_ids_)
+    m_core.pdo.remove_pdo_received_callback(cob_id);
+}
 
 void Device::start() {
 
@@ -192,6 +194,7 @@ void Device::add_receive_pdo_mapping(uint16_t cob_id, const std::string& entry_n
 
 	// TODO: this only works while add_pdo_received_callback takes callback by value.
 	auto binding = std::bind(&Device::pdo_received_callback, this, pdo, std::placeholders::_1);
+  cob_ids_.push_back(cob_id);
 	m_core.pdo.add_pdo_received_callback(cob_id, std::move(binding));
 
 }
