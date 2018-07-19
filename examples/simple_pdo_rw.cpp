@@ -52,6 +52,56 @@ void intHandler(int dummy) { keepRunning = 0; }
 //  std::cout << "hola" << std::endl;
 //}
 
+void initializeDevice(std::shared_ptr<kaco::Device> device,
+                      uint16_t heartbeat_interval, uint8_t node_id) {
+  // Load eds
+  device->load_dictionary_from_eds(
+      "/home/mhs/bor/test/CANopenSocket/canopend/objDict/"
+      "roboteq_motor_controllers_v80beta.eds");
+
+  // set the our desired heartbeat_interval time
+  device->set_entry(0x1017, 0x0, heartbeat_interval,
+                    kaco::WriteAccessMethod::sdo);
+
+  // Master side rpdo1 mapping
+  device->add_receive_pdo_mapping(0x180 + node_id, "qry_abspeed/channel_1", 0);
+  device->add_receive_pdo_mapping(0x180 + node_id, "qry_abspeed/channel_2", 2);
+  device->add_receive_pdo_mapping(0x180 + node_id, "qry_batamps/channel_1", 4);
+  device->add_receive_pdo_mapping(0x180 + node_id, "qry_batamps/channel_2", 6);
+  // Master side rpdo2 mapping
+  device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_int", 0);
+  device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_bat", 2);
+  device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_5vout", 4);
+  device->add_receive_pdo_mapping(0x280 + node_id, "qry_digout", 6);
+  // Master side tpdo1 mapping
+  device->add_transmit_pdo_mapping(
+      0x200 + node_id, {{"cmd_cango/cmd_cango_1", 0}},
+      kaco::TransmissionType::ON_CHANGE, std::chrono::milliseconds(250));
+
+  // Master side tpdo2 mapping
+  device->add_transmit_pdo_mapping(
+      0x300 + node_id, {{"cmd_cango/cmd_cango_2", 0}},
+      kaco::TransmissionType::ON_CHANGE, std::chrono::milliseconds(250));
+
+  // Device side tpdo1 mapping entries and mapping
+  const std::vector<uint32_t> tpdo1_entries_to_be_mapped{
+      0x21030110, 0x21030210, 0x210C0110, 0x210C0210};
+  map_tpdo_in_device(tpdo1, tpdo1_entries_to_be_mapped, 255, 100, 250, device);
+
+  // Device side tpdo2 mapping entries and mapping
+  const std::vector<uint32_t> tpdo2_entries_to_be_mapped{
+      0x210D0110, 0x210D0210, 0x210D0310,
+      0x21130010};  // {0x210D0110, 0x210D0210, 0x210D0310, 0x21030110}
+  map_tpdo_in_device(tpdo2, tpdo2_entries_to_be_mapped, 255, 100, 250, device);
+  // Device side rpdo1 mapping entries and mapping
+  const std::vector<uint32_t> rpdo1_entries_to_be_mapped{0x20000120};
+  map_rpdo_in_device(rpdo1, rpdo1_entries_to_be_mapped, 255, 100, 250, device);
+
+  // Device side rpdo2 mapping entries and mapping
+  const std::vector<uint32_t> rpdo2_entries_to_be_mapped{0x20000220};
+  map_rpdo_in_device(rpdo2, rpdo2_entries_to_be_mapped, 255, 100, 250, device);
+}
+
 int main() {
   // Signal handleing
   signal(SIGINT, intHandler);
@@ -88,10 +138,8 @@ int main() {
   // Create core.
   kaco::Core core;
   volatile bool found_node = false;
-  volatile bool node_initialized = false;
-  volatile bool first_time(false);
-  volatile bool heartbeat = false;
-  volatile long heartbeat_received_millis;
+  volatile bool device_connected = false;
+  std::mutex device_mutex;
 
   std::cout << "Starting Core (connect to the driver and start the receiver "
                "thread)..."
@@ -108,133 +156,72 @@ int main() {
                "detected via NMT..."
             << std::endl;
 
-  core.nmt.register_device_alive_callback(
-      [&](const uint8_t new_node_id) mutable {
-        // Check if this is the node we are looking for.
-        if (new_node_id == node_id) {
-          heartbeat_received_millis =
-              std::chrono::duration_cast<std::chrono::milliseconds>(
-                  std::chrono::system_clock::now().time_since_epoch())
-                  .count();
-          heartbeat = true;
-          // lock
-          if (!found_node) {
-            found_node = true;
-            // unlock
-            device.reset(new kaco::Device(core, node_id));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            device->load_dictionary_from_eds(
-                "/home/mhs/bor/test/CANopenSocket/canopend/objDict/"
-                "roboteq_motor_controllers_v80beta.eds");
-            node_initialized = true;
-            first_time = true;
+  core.nmt.register_device_alive_callback([&](const uint8_t new_node_id) {
+    // Check if this is the node we are looking for.
+    if (new_node_id == node_id) {
+      // lock
+      if (!found_node) {
+        found_node = true;
+        // Lock device mutex
+        std::lock_guard<std::mutex> lock(device_mutex);
+        try {
+          // Initialize the device
+          device.reset(new kaco::Device(core, node_id));
+          initializeDevice(device, heartbeat_interval, node_id);
+          device_connected = true;
+        } catch (...) {
+          std::cout << "Exception in device alive!" << std::endl;
+          found_node = false;
+          device_connected = false;
+        }
+      }
+    }
+  });
+  core.nmt.register_device_dead_callback(
+      [&](const uint8_t current_node_id) mutable {
+        if (device_connected && found_node) {
+          // Lock device mutex
+          std::lock_guard<std::mutex> lock(device_mutex);
+          // Check if our node is disconnected.
+          found_node = false;
+          device_connected = false;
+          device.reset();
 
-            // set the our desired heartbeat_interval time
-            device->set_entry(0x1017, 0x0, heartbeat_interval,
-                              kaco::WriteAccessMethod::sdo);
-          }
-          // else
-          //  unlock
+          std::cout << "Device with Node ID=0x" << std::hex << current_node_id
+                    << " is disconnected...." << std::endl;
+          // exit(1); // TO DO the
+          // This callback idealy should reinitiate the connection with the
+          // device
         }
       });
-  //  core.nmt.register_device_dead_callback(
-  //      [&](const uint8_t current_node_id) mutable {
-  //        // Check if our node is disconnected.
-  //        first_time = false;
-  //        //found_node = false;
-  //        node_initialized = false;
-  //        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  //        std::cout << "Device with Node ID=0x" << std::hex << current_node_id
-  //                  << " is disconnected...." << std::endl;
-  //        //exit(1); // TO DO the
-  //        // This callback idealy should reinitiate the connection with the
-  //        device
-  //      });
 
   int channel1_speed_ref = 0;
   int channel2_speed_ref = 0;
   bool max = false;
   while (keepRunning) {
-    if (node_initialized) {
-      if (first_time && heartbeat) {
-        first_time = false;
-        // Master side rpdo1 mapping
-        device->add_receive_pdo_mapping(0x180 + node_id,
-                                        "qry_abspeed/channel_1", 0);
-        device->add_receive_pdo_mapping(0x180 + node_id,
-                                        "qry_abspeed/channel_2", 2);
-        device->add_receive_pdo_mapping(0x180 + node_id,
-                                        "qry_batamps/channel_1", 4);
-        device->add_receive_pdo_mapping(0x180 + node_id,
-                                        "qry_batamps/channel_2", 6);
-        // Master side rpdo2 mapping
-        device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_int", 0);
-        device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_bat", 2);
-        device->add_receive_pdo_mapping(0x280 + node_id, "qry_volts/v_5vout",
-                                        4);
-        device->add_receive_pdo_mapping(0x280 + node_id, "qry_digout", 6);
-        // Master side tpdo1 mapping
-        device->add_transmit_pdo_mapping(
-            0x200 + node_id, {{"cmd_cango/cmd_cango_1", 0}},
-            kaco::TransmissionType::ON_CHANGE, std::chrono::milliseconds(250));
+    if (device_connected) {
+      // Lock device mutex
+      std::lock_guard<std::mutex> lock(device_mutex);
 
-        // Master side tpdo2 mapping
-        device->add_transmit_pdo_mapping(
-            0x300 + node_id, {{"cmd_cango/cmd_cango_2", 0}},
-            kaco::TransmissionType::ON_CHANGE, std::chrono::milliseconds(250));
-
-        // Device side tpdo1 mapping entries and mapping
-        const std::vector<uint32_t> tpdo1_entries_to_be_mapped{
-            0x21030110, 0x21030210, 0x210C0110, 0x210C0210};
-        map_tpdo_in_device(tpdo1, tpdo1_entries_to_be_mapped, 255, 100, 250,
-                           device);
-
-        // Device side tpdo2 mapping entries and mapping
-        const std::vector<uint32_t> tpdo2_entries_to_be_mapped{
-            0x210D0110, 0x210D0210, 0x210D0310,
-            0x21130010};  // {0x210D0110, 0x210D0210, 0x210D0310, 0x21030110}
-        map_tpdo_in_device(tpdo2, tpdo2_entries_to_be_mapped, 255, 100, 250,
-                           device);
-        // Device side rpdo1 mapping entries and mapping
-        const std::vector<uint32_t> rpdo1_entries_to_be_mapped{0x20000120};
-        map_rpdo_in_device(rpdo1, rpdo1_entries_to_be_mapped, 255, 100, 250,
-                           device);
-
-        // Device side rpdo2 mapping entries and mapping
-        const std::vector<uint32_t> rpdo2_entries_to_be_mapped{0x20000220};
-        map_rpdo_in_device(rpdo2, rpdo2_entries_to_be_mapped, 255, 100, 250,
-                           device);
-        // The above section needs to be done only once the device is detected
-
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-      // Check heartbeat time out status
-      auto current_millis =
-          std::chrono::duration_cast<std::chrono::milliseconds>(
-              std::chrono::system_clock::now().time_since_epoch())
-              .count();
-      if ((current_millis - heartbeat_received_millis) > heartbeat_timeout) {
-        heartbeat = false;
-      }
-      // Early exception handling
       try {
-        //        DUMP_HEX(
-        //            device->get_entry("qry_abspeed/channel_1",
-        //                              kaco::ReadAccessMethod::pdo_request_and_wait));
-        //        DUMP_HEX(
-        //            device->get_entry("qry_abspeed/channel_2",
-        //                              kaco::ReadAccessMethod::pdo_request_and_wait));
-        //        DUMP_HEX(
-        //            device->get_entry("qry_batamps/channel_1",
-        //                              kaco::ReadAccessMethod::pdo_request_and_wait));
-        //        DUMP_HEX(
-        //            device->get_entry("qry_batamps/channel_2",
-        //                              kaco::ReadAccessMethod::pdo_request_and_wait));
-      } catch (kaco::canopen_error exception) {
-        // No specific action is decided
-      }
-      if (heartbeat) {
+        // Early exception handling
+        //      try {
+        //        //        DUMP_HEX(
+        //        //            device->get_entry("qry_abspeed/channel_1",
+        //        // kaco::ReadAccessMethod::pdo_request_and_wait));
+        //        //        DUMP_HEX(
+        //        //            device->get_entry("qry_abspeed/channel_2",
+        //        // kaco::ReadAccessMethod::pdo_request_and_wait));
+        //        //        DUMP_HEX(
+        //        //            device->get_entry("qry_batamps/channel_1",
+        //        // kaco::ReadAccessMethod::pdo_request_and_wait));
+        //        //        DUMP_HEX(
+        //        //            device->get_entry("qry_batamps/channel_2",
+        //        // kaco::ReadAccessMethod::pdo_request_and_wait));
+        //      } catch (kaco::canopen_error exception) {
+        //        // No specific action is decided
+        //      }
+
         // Prepare the commands; master side tpdo1 and tpdo2
         if (3000 > channel1_speed_ref && max == false) {
           // channel1_speed_ref++;
@@ -293,13 +280,15 @@ int main() {
             "qry_digout", kaco::ReadAccessMethod::pdo_request_and_wait);
         std::cout << "Status of Digital Outs = " << std::hex << digout << ""
                   << std::endl;
-      } else {
-        std::cout << "Heartbeat status = " << heartbeat << std::endl;
-        std::cout << "Device with Node ID=0x" << std::hex << node_id
-                  << " is disconnected...." << std::endl;
-        first_time = true;
+
+        std::cout << "Step in main!" << std::endl;
+      } catch (...) {
+        std::cout << "Exception in main!" << std::endl;
       }
     }
+
+    // Sleep
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
   std::cout << "Finished." << std::endl;

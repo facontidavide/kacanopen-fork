@@ -97,8 +97,8 @@ if (NOT(${NO_ROS}))
 	)
 
 	catkin_package(
-		INCLUDE_DIRS core/include master/include ros_bridge/include
-		LIBRARIES ${CAN_DRIVER} kacanopen_core kacanopen_master kacanopen_ros_bridge
+                INCLUDE_DIRS core/include master/include ros_bridge/include tools/include
+                LIBRARIES ${CAN_DRIVER} kacanopen_core kacanopen_master kacanopen_ros_bridge kacanopen_tools
 		CATKIN_DEPENDS message_runtime
 	)
 

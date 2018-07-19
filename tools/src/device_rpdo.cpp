@@ -9,7 +9,7 @@ void map_rpdo_in_device(RPDO_NO rpdo_no,
   uint32_t cob_id = 0;
   switch (rpdo_no) {
     case rpdo1:
-      std::cout << "Mapping RPDO1" << std::endl;
+      std::cout << "Mapping RPDO1 in the device" << std::endl;
       // disable rpdo1
       cob_id = device->get_entry(0x1400, 01, kaco::ReadAccessMethod::sdo);
       cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));
@@ -33,7 +33,7 @@ void map_rpdo_in_device(RPDO_NO rpdo_no,
                         kaco::WriteAccessMethod::sdo);
       break;
     case rpdo2:
-      std::cout << "Mapping RPDO2" << std::endl;
+      std::cout << "Mapping RPDO2 in the device" << std::endl;
       // disable rpdo2
       cob_id = device->get_entry(0x1401, 01, kaco::ReadAccessMethod::sdo);
       cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));
@@ -57,7 +57,7 @@ void map_rpdo_in_device(RPDO_NO rpdo_no,
                         kaco::WriteAccessMethod::sdo);
       break;
     case rpdo3:
-    std::cout << "Mapping RPDO3" << std::endl;
+    std::cout << "Mapping RPDO3 in the device" << std::endl;
     // disable rpdo3
     cob_id = device->get_entry(0x1402, 01, kaco::ReadAccessMethod::sdo);
     cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));
@@ -81,7 +81,7 @@ void map_rpdo_in_device(RPDO_NO rpdo_no,
                       kaco::WriteAccessMethod::sdo);
       break;
     case rpdo4:
-    std::cout << "Mapping RPDO4" << std::endl;
+    std::cout << "Mapping RPDO4 in the device" << std::endl;
     // disable rpdo4
     cob_id = device->get_entry(0x1403, 01, kaco::ReadAccessMethod::sdo);
     cob_id ^= static_cast<uint32_t>((-1 ^ cob_id) & (1UL << 31));

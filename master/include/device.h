@@ -329,6 +329,8 @@ namespace kaco {
 		static const Value m_dummy_value;
 		EDSLibrary m_eds_library;
 
+    std::vector<uint16_t> cob_ids_;
+
 	};
 
 } // end namespace kaco
