@@ -83,34 +83,58 @@ int main() {
   // This will be set to true by the callback below.
   bool found_node = false;
   bool node_initialized = false;
+  int channel1_speed_ref = 0;
+  bool max = false;
 
   std::cout << "Registering a callback which is called when a device is "
                "detected via NMT..."
             << std::endl;
-  core.nmt.register_device_alive_callback(
-      [&](const uint8_t new_node_id) mutable {
-        // Check if this is the node we are looking for.
-        if (new_node_id == node_id) {
-          if (!found_node) {
-            found_node = true;
+  core.nmt.register_device_alive_callback([&](
+      const uint8_t new_node_id) mutable {
+    // Check if this is the node we are looking for.
+    if (new_node_id == node_id) {
+      if (!found_node) {
+        found_node = true;
 
-            device.reset(new kaco::Device(core, node_id));
-            device->load_dictionary_from_eds(
-                "/home/mhs/Desktop/EDS/roboteq_motor_controllers_v80beta.eds");
+        device.reset(new kaco::Device(core, node_id));
+        device->load_dictionary_from_eds(
+            "/home/mhs/Desktop/EDS/roboteq_motor_controllers_v80beta.eds");
 
-            device->set_entry("Cmd_DOUT", static_cast<uint8_t>(0xF0),
-                              kaco::WriteAccessMethod::pdo);
-            device->add_transmit_pdo_mapping(0x200 + node_id, {{"Cmd_DOUT", 0}},
-                                             kaco::TransmissionType::PERIODIC,
-                                             std::chrono::milliseconds(250));
-            node_initialized = true;
-          }
-        }
-      });
+        device->set_entry("cmd_cango/cmd_cango_1", channel1_speed_ref,
+                          kaco::WriteAccessMethod::pdo);
+        device->add_transmit_pdo_mapping(
+            0x200 + node_id, {{"cmd_cango/cmd_cango_1", 0}},
+            kaco::TransmissionType::PERIODIC, std::chrono::milliseconds(250));
+
+        node_initialized = true;
+      }
+    }
+  });
 
   while (keepRunning) {
     if (node_initialized) {
       // std::cout << " I am running." << std::endl;
+      // Prepare the commands; master side tpdo1 and tpdo2
+      if (3000 > channel1_speed_ref && max == false) {
+        // channel1_speed_ref++;
+        channel1_speed_ref = channel1_speed_ref + 100;
+        if (3000 == channel1_speed_ref) {
+          max = true;
+        }
+      }
+      if (-3000 < channel1_speed_ref && max == true) {
+        // channel1_speed_ref--;
+        channel1_speed_ref = channel1_speed_ref - 100;
+        if (-3000 == channel1_speed_ref) {
+          max = false;
+        }
+      }
+      std::cout << "Channel 1 speed command = " << std::dec
+                << channel1_speed_ref << std::endl;
+
+      device->set_entry("cmd_cango/cmd_cango_1", (channel1_speed_ref),
+                        kaco::WriteAccessMethod::pdo);
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
     }
   }
   std::cout << "Finished." << std::endl;
