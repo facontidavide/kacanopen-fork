@@ -96,11 +96,11 @@ void initializeDevice(std::shared_ptr<kaco::Device> device,
   map_tpdo_in_device(tpdo2, tpdo2_entries_to_be_mapped, 255, 100, 250, device);
   // Device side rpdo1 mapping entries and mapping
   const std::vector<uint32_t> rpdo1_entries_to_be_mapped{0x20000120};
-  map_rpdo_in_device(rpdo1, rpdo1_entries_to_be_mapped, 255, 100, 250, device);
+  map_rpdo_in_device(rpdo1, rpdo1_entries_to_be_mapped, 255, device);
 
   // Device side rpdo2 mapping entries and mapping
   const std::vector<uint32_t> rpdo2_entries_to_be_mapped{0x20000220};
-  map_rpdo_in_device(rpdo2, rpdo2_entries_to_be_mapped, 255, 100, 250, device);
+  map_rpdo_in_device(rpdo2, rpdo2_entries_to_be_mapped, 255, device);
 }
 
 int main() {
@@ -130,7 +130,9 @@ int main() {
 
   // Set the heartbeat time out, after which the system should detect slave
   // disconnection; values can be "250", "500", "1000" and "2000" millisecond.
-  const uint16_t heartbeat_timeout = heartbeat_interval * 3;
+  // Temporary disabled the timeout parameters; A gloabl 2 second time is now
+  // used in device_alive and device_dead callback
+  // const uint16_t heartbeat_timeout = heartbeat_interval * 3;
 
   // -------------- //
   // Initialization //

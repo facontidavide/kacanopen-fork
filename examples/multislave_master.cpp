@@ -89,7 +89,6 @@ bool printDeviceInfo(std::shared_ptr<kaco::Device> device_) {
   }
 }
 
-
 void initializeDevice(std::shared_ptr<kaco::Device> device,
                       uint16_t heartbeat_interval, uint8_t node_id) {
   // Load eds
@@ -135,11 +134,11 @@ void initializeDevice(std::shared_ptr<kaco::Device> device,
   map_tpdo_in_device(tpdo2, tpdo2_entries_to_be_mapped, 255, 100, 250, device);
   // Device side rpdo1 mapping entries and mapping
   const std::vector<uint32_t> rpdo1_entries_to_be_mapped{0x20000120};
-  map_rpdo_in_device(rpdo1, rpdo1_entries_to_be_mapped, 255, 100, 250, device);
+  map_rpdo_in_device(rpdo1, rpdo1_entries_to_be_mapped, 255, device);
 
   // Device side rpdo2 mapping entries and mapping
   const std::vector<uint32_t> rpdo2_entries_to_be_mapped{0x20000220};
-  map_rpdo_in_device(rpdo2, rpdo2_entries_to_be_mapped, 255, 100, 250, device);
+  map_rpdo_in_device(rpdo2, rpdo2_entries_to_be_mapped, 255, device);
 }
 
 int main() {
@@ -169,7 +168,9 @@ int main() {
 
   // Set the heartbeat time out, after which the system should detect slave
   // disconnection; values can be "250", "500", "1000" and "2000" millisecond.
-  const uint16_t heartbeat_timeout = heartbeat_interval * 3;
+  // Temporary disabled the timeout parameters; A gloabl 2 second time is now
+  // used in device_alive and device_dead callback
+  // const uint16_t heartbeat_timeout = heartbeat_interval * 3;
 
   // -------------- //
   // Initialization //
@@ -212,7 +213,7 @@ int main() {
         device[i]->start();
         initializeDevice(device[i], heartbeat_interval, temp_node_id);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        device_connected[0] = true;
+        device_connected[i] = true;
       }
     }
   }
@@ -270,105 +271,107 @@ int main() {
   bool max = false;
   uint8_t i = 0;
   while (keepRunning) {
-    if (device[i]->get_node_id() == 4) {
-      // Lock device mutex
-      // std::lock_guard<std::mutex> lock(device_mutex);
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "Controlling device with node id=4" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      try {
-        // Early exception handling
-        //      try {
-        //        //        DUMP_HEX(
-        //        //            device->get_entry("qry_abspeed/channel_1",
-        //        // kaco::ReadAccessMethod::pdo_request_and_wait));
-        //        //        DUMP_HEX(
-        //        //            device->get_entry("qry_abspeed/channel_2",
-        //        // kaco::ReadAccessMethod::pdo_request_and_wait));
-        //        //        DUMP_HEX(
-        //        //            device->get_entry("qry_batamps/channel_1",
-        //        // kaco::ReadAccessMethod::pdo_request_and_wait));
-        //        //        DUMP_HEX(
-        //        //            device->get_entry("qry_batamps/channel_2",
-        //        // kaco::ReadAccessMethod::pdo_request_and_wait));
-        //      } catch (kaco::canopen_error exception) {
-        //        // No specific action is decided
-        //      }
+    if (device_connected[i]) {
+      if (device[i]->get_node_id() == 4) {
+        // Lock device mutex
+        // std::lock_guard<std::mutex> lock(device_mutex);
+        std::cout << "" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "Controlling device with node id=4" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "" << std::endl;
+        try {
+          // Early exception handling
+          //      try {
+          //        //        DUMP_HEX(
+          //        //            device->get_entry("qry_abspeed/channel_1",
+          //        // kaco::ReadAccessMethod::pdo_request_and_wait));
+          //        //        DUMP_HEX(
+          //        //            device->get_entry("qry_abspeed/channel_2",
+          //        // kaco::ReadAccessMethod::pdo_request_and_wait));
+          //        //        DUMP_HEX(
+          //        //            device->get_entry("qry_batamps/channel_1",
+          //        // kaco::ReadAccessMethod::pdo_request_and_wait));
+          //        //        DUMP_HEX(
+          //        //            device->get_entry("qry_batamps/channel_2",
+          //        // kaco::ReadAccessMethod::pdo_request_and_wait));
+          //      } catch (kaco::canopen_error exception) {
+          //        // No specific action is decided
+          //      }
 
-        // Prepare the commands; master side tpdo1 and tpdo2
+          // Prepare the commands; master side tpdo1 and tpdo2
 
-        if (3000 > channel1_speed_ref && max == false) {
-          // channel1_speed_ref++;
-          channel1_speed_ref = channel1_speed_ref + 100;
-          if (3000 == channel1_speed_ref) {
-            max = true;
+          if (3000 > channel1_speed_ref && max == false) {
+            // channel1_speed_ref++;
+            channel1_speed_ref = channel1_speed_ref + 100;
+            if (3000 == channel1_speed_ref) {
+              max = true;
+            }
           }
-        }
-        if (-3000 < channel1_speed_ref && max == true) {
-          // channel1_speed_ref--;
-          channel1_speed_ref = channel1_speed_ref - 100;
-          if (-3000 == channel1_speed_ref) {
-            max = false;
+          if (-3000 < channel1_speed_ref && max == true) {
+            // channel1_speed_ref--;
+            channel1_speed_ref = channel1_speed_ref - 100;
+            if (-3000 == channel1_speed_ref) {
+              max = false;
+            }
           }
-        }
-        channel2_speed_ref = channel1_speed_ref;
-        device[i]->set_entry("cmd_cango/cmd_cango_1",
-                             static_cast<int>(channel1_speed_ref),
-                             kaco::WriteAccessMethod::pdo);
-        std::cout << "Channel 1 speed command = " << std::dec
-                  << channel1_speed_ref << std::endl;
-        int16_t ch1_speed_feedback =
-            device[i]->get_entry("qry_abspeed/channel_1",
-                                 kaco::ReadAccessMethod::pdo_request_and_wait);
-        std::cout << "Channel 1 speed feedback = " << std::dec
-                  << (ch1_speed_feedback) << std::endl;
-        device[i]->set_entry("cmd_cango/cmd_cango_2",
-                             static_cast<int>(channel2_speed_ref),
-                             kaco::WriteAccessMethod::pdo);
-        std::cout << "Channel 2 speed command = " << std::dec
-                  << channel1_speed_ref << std::endl;
-        int16_t ch2_speed_feedback =
-            device[i]->get_entry("qry_abspeed/channel_2",
-                                 kaco::ReadAccessMethod::pdo_request_and_wait);
-        std::cout << "Channel 2 speed feedback = " << std::dec
-                  << ch2_speed_feedback << std::endl;
-        uint16_t v_int = device[i]->get_entry(
-            "qry_volts/v_int", kaco::ReadAccessMethod::pdo_request_and_wait);
-        std::cout << "Internal Voltage = " << std::dec
-                  << static_cast<float>(static_cast<float>(v_int) /
-                                        static_cast<float>(10))
-                  << "V" << std::endl;
-        uint16_t v_bat = device[i]->get_entry(
-            "qry_volts/v_bat", kaco::ReadAccessMethod::pdo_request_and_wait);
-        std::cout << "Battery Voltage = " << std::dec
-                  << static_cast<float>(static_cast<float>(v_bat) /
-                                        static_cast<float>(10))
-                  << "V" << std::endl;
-        uint16_t v_5vout = device[i]->get_entry(
-            "qry_volts/v_5vout", kaco::ReadAccessMethod::pdo_request_and_wait);
-        std::cout << "Internal 5V supply = " << std::dec
-                  << static_cast<float>(static_cast<float>(v_5vout) /
-                                        static_cast<float>(1000))
-                  << "V" << std::endl;
-        uint16_t digout = device[i]->get_entry(
-            "qry_digout", kaco::ReadAccessMethod::pdo_request_and_wait);
-        std::cout << "Status of Digital Outs = " << std::hex << digout << ""
-                  << std::endl;
+          channel2_speed_ref = channel1_speed_ref;
+          device[i]->set_entry("cmd_cango/cmd_cango_1",
+                               static_cast<int>(channel1_speed_ref),
+                               kaco::WriteAccessMethod::pdo);
+          std::cout << "Channel 1 speed command = " << std::dec
+                    << channel1_speed_ref << std::endl;
+          int16_t ch1_speed_feedback = device[i]->get_entry(
+              "qry_abspeed/channel_1",
+              kaco::ReadAccessMethod::pdo_request_and_wait);
+          std::cout << "Channel 1 speed feedback = " << std::dec
+                    << (ch1_speed_feedback) << std::endl;
+          device[i]->set_entry("cmd_cango/cmd_cango_2",
+                               static_cast<int>(channel2_speed_ref),
+                               kaco::WriteAccessMethod::pdo);
+          std::cout << "Channel 2 speed command = " << std::dec
+                    << channel1_speed_ref << std::endl;
+          int16_t ch2_speed_feedback = device[i]->get_entry(
+              "qry_abspeed/channel_2",
+              kaco::ReadAccessMethod::pdo_request_and_wait);
+          std::cout << "Channel 2 speed feedback = " << std::dec
+                    << ch2_speed_feedback << std::endl;
+          uint16_t v_int = device[i]->get_entry(
+              "qry_volts/v_int", kaco::ReadAccessMethod::pdo_request_and_wait);
+          std::cout << "Internal Voltage = " << std::dec
+                    << static_cast<float>(static_cast<float>(v_int) /
+                                          static_cast<float>(10))
+                    << "V" << std::endl;
+          uint16_t v_bat = device[i]->get_entry(
+              "qry_volts/v_bat", kaco::ReadAccessMethod::pdo_request_and_wait);
+          std::cout << "Battery Voltage = " << std::dec
+                    << static_cast<float>(static_cast<float>(v_bat) /
+                                          static_cast<float>(10))
+                    << "V" << std::endl;
+          uint16_t v_5vout = device[i]->get_entry(
+              "qry_volts/v_5vout",
+              kaco::ReadAccessMethod::pdo_request_and_wait);
+          std::cout << "Internal 5V supply = " << std::dec
+                    << static_cast<float>(static_cast<float>(v_5vout) /
+                                          static_cast<float>(1000))
+                    << "V" << std::endl;
+          uint16_t digout = device[i]->get_entry(
+              "qry_digout", kaco::ReadAccessMethod::pdo_request_and_wait);
+          std::cout << "Status of Digital Outs = " << std::hex << digout << ""
+                    << std::endl;
 
-        std::cout << "Step in main!" << std::endl;
-      } catch (...) {
-        std::cout << "Exception in main!" << std::endl;
+          std::cout << "Step in main!" << std::endl;
+        } catch (...) {
+          std::cout << "Exception in main!" << std::endl;
+        }
+      } else if (device[i]->get_node_id() == 3) {
+        std::cout << "" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "Controlling device with node id=3" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "" << std::endl;
+        printDeviceInfo(device[i]);
       }
-    } else if (device[i]->get_node_id() == 3) {
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "Controlling device with node id=3" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      printDeviceInfo(device[i]);
-
     }
     i++;
     if (i > 1) {

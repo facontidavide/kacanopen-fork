@@ -76,7 +76,7 @@ int main() {
     // TODO: first configure PDO on device side?
     device.add_receive_pdo_mapping(0x180+node_id, "Read input 8-bit/Digital Inputs 1-8", 0); // offset 0,
     device.add_receive_pdo_mapping(0x180+node_id, "Read input 8-bit/Digital Inputs 9-16", 1); // offset 1
-
+    
     // transmit PDO on change
     device.add_transmit_pdo_mapping(0x200+node_id, {{"Write output 8-bit/Digital Outputs 1-8", 0}}); // offset 0
     // transmit PDO every 500ms
