@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2018-2019, Musarraf Hossain
  * All rights reservd.
  *
@@ -84,8 +84,9 @@ void initializeDevice(std::shared_ptr<kaco::Device> device,
       kaco::TransmissionType::ON_CHANGE, std::chrono::milliseconds(250));
 
   // Device side tpdo1 mapping entries and mapping
+  // Using 0x21030310 for channel2 feedback instead of 21030210 for roboteq bug
   const std::vector<uint32_t> tpdo1_entries_to_be_mapped{
-      0x21030110, 0x21030210, 0x210C0110, 0x210C0210};
+      0x21030110, 0x21030310, 0x210C0110, 0x210C0210};
   map_tpdo_in_device(tpdo1, tpdo1_entries_to_be_mapped, 255, 100, 250, device);
 
   // Device side tpdo2 mapping entries and mapping
@@ -117,7 +118,7 @@ int main() {
 
   // Set the name of your CAN bus. "slcan0" is a common bus name
   // for the first SocketCAN device on a Linux system.
-  const std::string busname = "can0";
+  const std::string busname = "slcan0";
 
   // Set the baudrate of your CAN bus. Most drivers support the values
   // "1M", "500K", "125K", "100K", "50K", "20K", "10K" and "5K".
@@ -223,17 +224,17 @@ int main() {
         //      }
 
         // Prepare the commands; master side tpdo1 and tpdo2
-        if (3000 > channel1_speed_ref && max == false) {
+        if (800 > channel1_speed_ref && max == false) {
           // channel1_speed_ref++;
-          channel1_speed_ref = channel1_speed_ref + 100;
-          if (3000 == channel1_speed_ref) {
+          channel1_speed_ref = channel1_speed_ref + 10;
+          if (800 == channel1_speed_ref) {
             max = true;
           }
         }
-        if (-3000 < channel1_speed_ref && max == true) {
+        if (-800 < channel1_speed_ref && max == true) {
           // channel1_speed_ref--;
-          channel1_speed_ref = channel1_speed_ref - 100;
-          if (-3000 == channel1_speed_ref) {
+          channel1_speed_ref = channel1_speed_ref - 10;
+          if (-800 == channel1_speed_ref) {
             max = false;
           }
         }
