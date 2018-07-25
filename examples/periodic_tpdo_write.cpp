@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2016, Thomas Keh
- * All rights reserved.
+ * Copyright (c) 2018-2019, Musarraf Hossain
+ * All rights reservd.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,10 @@
 
 static volatile int keepRunning = 1;
 
-void intHandler(int dummy) { keepRunning = 0; }
+void intHandler(int dummy) {
+  (void)dummy;
+  keepRunning = 0;
+}
 
 int main() {
   // Signal handleing

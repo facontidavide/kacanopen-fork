@@ -42,7 +42,10 @@
 
 static volatile int keepRunning = 1;
 
-void intHandler(int dummy) { keepRunning = 0; }
+void intHandler(int dummy) {
+  (void)dummy;
+  keepRunning = 0;
+}
 
 int main() {
   // Signal handleing

@@ -45,8 +45,10 @@
 
 static volatile int keepRunning = 1;
 
-void intHandler(int dummy) { keepRunning = 0; }
-
+void intHandler(int dummy) {
+  (void)dummy;
+  keepRunning = 0;
+}
 // void qry_abspeed_channel_1_callback(const kaco::ReceivePDOMapping& mapping,
 //                                    std::vector<uint8_t> data) {
 //  std::cout << "hola" << std::endl;
